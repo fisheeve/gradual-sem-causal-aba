@@ -22,8 +22,11 @@ install:
 	Rscript -e 'install.packages("BiocManager", repos="https://cloud.r-project.org")'
 	Rscript -e 'BiocManager::install(c("SID", "bnlearn", "pcalg", "kpcalg", "glmnet", "mboost"))'
 
-	@echo "[TODO: fix this somehow] Applying custom changes to cloned repos..."
+	@echo "[TODO: fix this somehow] Applying custom changes to ArgCausalDisco sub-repo..."
 	cd ArgCausalDisco && git apply ../causalaba.diff
+
+	@echo "[TODO: fix this somehow] Applying custom changes to aspforaba sub-repo..."
+	cd aspforaba && git apply ../aspforaba.diff
 
 clean:
 	@echo "Removing Conda environment '$(ENV_NAME)'..."

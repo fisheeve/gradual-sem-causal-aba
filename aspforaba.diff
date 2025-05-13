@@ -1,0 +1,76 @@
+diff --git a/src/aspforaba/aba_solver.py b/src/aspforaba/aba_solver.py
+index 77e3abe..44afeb6 100644
+--- a/src/aspforaba/aba_solver.py
++++ b/src/aspforaba/aba_solver.py
+@@ -340,7 +340,7 @@ class ABASolver:
+         if model:
+             for sym in model:
+                 # NOTE: for non-flat, need different!
+-                if sym.name == "supported":
++                if sym.name == "in":
+                     index = int(sym.arguments[0].name[1:])
+                     if index in self.abaf.idx_to_asmpt:
+                         assumptions.add(self.abaf.idx_to_asmpt[index])
+diff --git a/src/aspforaba/encoder.py b/src/aspforaba/encoder.py
+index a866c76..1fef1ef 100644
+--- a/src/aspforaba/encoder.py
++++ b/src/aspforaba/encoder.py
+@@ -19,6 +19,7 @@ OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+ OTHER DEALINGS IN THE SOFTWARE.
+ """
+ 
++
+ class Encoder:
+     COMMON_ENCODING = """
+         { in(X) : assumption(X) }.
+@@ -42,6 +43,29 @@ class Encoder:
+ 
+     STABLE_ADD = ":- not defeated(X), out(X)."
+ 
++    STABLE_ENCODING = """
++    %% Assumption is either in or out
++    in(X) :- assumption(X), not out(X).
++    out(X) :- assumption(X), not in(X).
++
++    %% Everything derivable from assumptions that are in
++    derived(X) :- assumption(X), in(X).
++    derived(X) :- head(R,X), triggered_by_in(R).
++    triggered_by_in(R) :- head(R,_), derived(X) : body(R,X).
++
++    %% Conflict freeness
++    :- in(X), contrary(X,Y), derived(Y).
++
++    %% In is closed
++    :- assumption(X), derived(X), not in(X).
++
++    %% assumptions attacked by the in arguments
++    defeated(X) :- derived(Y), contrary(X,Y).
++
++    %% In attacks every assumption that is out
++    :- out(X), not defeated(X).
++    """
++
+     GROUNDED_ENCODING = """
+         n_assumptions(N) :- #count{X : assumption(X)} = N.
+         iteration(0..N) :- n_assumptions(N).
+@@ -75,8 +99,7 @@ class Encoder:
+         ctl.add("base", [], Encoder.COMPLETE_ADD)
+ 
+     def _stable_encoding(ctl):
+-        ctl.add("base", [], Encoder.COMMON_ENCODING)
+-        ctl.add("base", [], Encoder.STABLE_ADD)
++        ctl.add("base", [], Encoder.STABLE_ENCODING)
+ 
+     def _grounded_encoding(ctl):
+         ctl.add("base", [], Encoder.GROUNDED_ENCODING)
+@@ -118,9 +141,6 @@ class Encoder:
+         else:
+             raise ValueError(f"Semantics '{semantics}' not supported")
+ 
+-        ctl.add("base", [], "#show in/1. #show supported/1.")
++        ctl.add("base", [], "#show in/1.")
+         if semantics == "PR" or semantics == "ID":
+             ctl.add("base", [], "#show out/1.")
+-
+-
+-

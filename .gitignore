@@ -4,6 +4,9 @@ aspforaba/
 notears/
 ababaf/
 
+# Max
+.DS_Store
+
 # experiment results
 experiments/results/
 
