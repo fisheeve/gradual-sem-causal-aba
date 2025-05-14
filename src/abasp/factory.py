@@ -61,8 +61,9 @@ class ABASPSolverFactory(CoreABASPSolverFactory):
         NOTE 2: don't consider paths that contain edges where nodes are independent according to external facts
 
         '''
-        solver = self.create_core_solver()
+        solver = self.create_core_solver(facts)
 
+        # TODO: do not consider paths that have edges with nodes that are independent (for any set S)
         # not consider paths that have edges with nodes that are independent (for any set S)
         # edges_to_remove = set()
         # for fact in facts:
@@ -96,6 +97,8 @@ class ABASPSolverFactory(CoreABASPSolverFactory):
                 solver.add_rule(assums.indep(fact.node1, fact.node2, fact.node_set), [])
                 # add corresponding dependency rules to attack
                 for path_id, my_path in enumerate(paths):
+                    # active path definition
+                    self._add_blocked_path_assumptions(solver, path_id, X, Y, S)
                     self._add_active_path_rules(solver, path_id, my_path, X, Y, S)
                     self._add_dependence_rules(solver, path_id, X, Y, S)
 

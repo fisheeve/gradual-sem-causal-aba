@@ -83,17 +83,18 @@ class CoreABASPSolverFactory:
     def _add_collider_descendant_definition_rules(solver, X, Y, Z, N):
         solver.add_rule(atoms.descendant_of_collider(N, X, Y, Z), [atoms.collider(X, Y, Z), atoms.dpath(Y, N)])
 
-    def create_core_solver(self):
+    def create_core_solver(self, facts):
         """
         Create a core solver for the ABASP problem.
         It contains all graph edge assumptions, colliders and corresponding rules.
         NOTE: It does not contain active/blocked path rules and independence assumptions.
 
         """
+        # TODO: do not consider arr assumptions for paths that have edges with nodes that are independent (for any set S)
+
         solver = ABASolver()
 
         for X, Y in unique_product(range(self.n_nodes), repeat=2):
-            self._add_acyclicity_rules(solver, X, Y)
 
             if X < Y:  # for X, Y unique combinations
                 self._add_graph_edge_assumptions(solver, X, Y)
@@ -101,16 +102,17 @@ class CoreABASPSolverFactory:
                 for S in powerset(range(self.n_nodes)):
                     self._add_non_blocking_rules(solver, X, Y, S, self.n_nodes)
 
-            for Z in range(self.n_nodes):
-                if Z not in {X, Y}:  # X, Y, Z unique
-                    self._add_direct_path_definition_rules(solver, X, Y, Z)
+            self._add_acyclicity_rules(solver, X, Y)
 
-                    if X < Z:
-                        # X < Z is to avoid duplicates as colliders are symmetric
-                        self._add_collider_definition_rules(solver, X, Y, Z)
+        for X, Y, Z in unique_product(range(self.n_nodes), repeat=3):
+            self._add_direct_path_definition_rules(solver, X, Y, Z)
 
-                        for N in range(self.n_nodes):
-                            if N not in {X, Y, Z}:  # X, Y, Z, N unique
-                                self._add_collider_descendant_definition_rules(solver, X, Y, Z, N)
+            if X < Z:
+                # X < Z is to avoid duplicates as colliders are symmetric
+                self._add_collider_definition_rules(solver, X, Y, Z)
+
+                for N in range(self.n_nodes):
+                    if N not in {X, Y, Z}:  # X, Y, Z, N unique
+                        self._add_collider_descendant_definition_rules(solver, X, Y, Z, N)
 
         return solver

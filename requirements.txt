@@ -16,3 +16,5 @@ causal-learn==0.1
 gcastle==1.0
 torch==2.7
 cdt==0.6
+pytest==8.3
+pytest-mock==3.14
