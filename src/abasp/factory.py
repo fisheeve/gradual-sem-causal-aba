@@ -5,8 +5,7 @@ import src.abasp.atoms as atoms
 import src.abasp.assumptions as assums
 
 from src.abasp.core_factory import CoreABASPSolverFactory
-from src.abasp.utils import powerset, Fact, RelationEnum
-from itertools import combinations
+from src.abasp.utils import Fact, RelationEnum
 
 
 class ABASPSolverFactory(CoreABASPSolverFactory):

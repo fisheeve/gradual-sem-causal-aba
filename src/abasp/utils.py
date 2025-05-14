@@ -1,6 +1,8 @@
+import numpy as np
 from itertools import chain, combinations, product
 from enum import Enum
 from dataclasses import dataclass
+from aspforaba.src.aspforaba.abaf import AssumptionSet
 
 
 def is_unique(ary):
@@ -21,6 +23,50 @@ def unique_product(elements, repeat: int):
             yield element_set
 
 
+def parse_arrow(arrow: str):
+    """
+    Parse an arrow string into a tuple of integers.
+    :param arrow: The arrow string to parse.
+    :return: A tuple of integers representing the arrow.
+    """
+
+    try:
+        _, node1, node2 = arrow.split("_")
+        node1 = int(node1)
+        node2 = int(node2)
+    except ValueError as e:
+        raise ValueError(f"Arrow must be of form arr_<node1>_<node2>, got {arrow}. Here is the exception {e}")
+
+    return node1, node2
+
+
+def get_arrows_from_model(model: AssumptionSet):
+    """
+    Get the arrows from a model.
+    :param model: The model to extract arrows from.
+    :return: A set of tuples representing the arrows in the model.
+    """
+    arrows = set()
+    for assumption in model.assumptions:
+        if assumption.startswith("arr_"):
+            node1, node2 = parse_arrow(assumption)
+            arrows.add((node1, node2))
+    return arrows
+
+
+def get_graph_matrix(n_nodes, arrows):
+    """
+    Get the adjacency matrix of a graph.
+    :param n_nodes: The number of nodes in the graph.
+    :param arrows: The arrows in the graph.
+    :return: A numpy array representing the adjacency matrix of the graph.
+    """
+    matrix = np.zeros((n_nodes, n_nodes), dtype=int)
+    for node1, node2 in arrows:
+        matrix[node1, node2] = 1
+    return matrix
+
+
 class RelationEnum(str, Enum):
     dep = "dep"
     indep = "indep"
@@ -33,17 +79,3 @@ class Fact:
     node2: int
     node_set: set
     score: float
-
-    @classmethod
-    def from_tuple(cls, tpl):
-        node1, node_set_tuple, node2, relation, _, score = tpl
-        # independence is symmetric
-        if node1 > node2:
-            node1, node2 = node2, node1
-        return cls(
-            relation=RelationEnum(relation),
-            node1=int(node1),
-            node2=int(node2),
-            node_set=set(int(i) for i in node_set_tuple),
-            score=float(score)
-        )

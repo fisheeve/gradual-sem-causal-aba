@@ -1,7 +1,6 @@
-from aspforaba.src.aspforaba import ABASolver
-
 import src.abasp.atoms as atoms
 import src.abasp.assumptions as assums
+from src.abasp.solver import Solver
 from src.abasp.utils import unique_product, powerset
 
 
@@ -92,7 +91,7 @@ class CoreABASPSolverFactory:
         """
         # TODO: do not consider arr assumptions for paths that have edges with nodes that are independent (for any set S)
 
-        solver = ABASolver()
+        solver = Solver()
 
         for X, Y in unique_product(range(self.n_nodes), repeat=2):
 
