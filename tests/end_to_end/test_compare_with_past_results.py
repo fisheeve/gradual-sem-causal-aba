@@ -25,7 +25,7 @@ def test_causalaba_equal_to_ABASP():
                     scenario='test_cancer_5_nodes',
                     out_mode="optN")
     
-    abasp_models = get_stable_arrow_sets(data, seed=seed)
+    abasp_models, _ = get_stable_arrow_sets(data, seed=seed)
     abasp_models = {frozenset(model) for model in abasp_models}
 
     print(seed)

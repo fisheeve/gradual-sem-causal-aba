@@ -1,5 +1,9 @@
 from pathlib import Path
 from itertools import combinations
+from tqdm import tqdm
+import numpy as np
+import networkx as nx
+import pandas as pd
 
 from ArgCausalDisco.utils.helpers import random_stability
 from ArgCausalDisco.utils.data_utils import load_bnlearn_data_dag
@@ -41,6 +45,8 @@ def get_stable_arrow_sets(data,
             The stable models from the ABAPC algorithm
             in a form of arrow sets.
     """
+    # TODO: Refactor, make nicer
+    # TODO: Compare with method of eliminating from back, untill extension is found, see if faster or slower
     random_stability(seed)
     n_nodes = data.shape[1]
     cg = pc(data=data, alpha=alpha, indep_test=indep_test, uc_rule=uc_rule,
@@ -70,43 +76,50 @@ def get_stable_arrow_sets(data,
 
     # binary search to find the largest fact set where stable extensions exist
 
-    left_idx = 0
-    right_idx = len(sorted_facts) - 1
     factory = ABASPSolverFactory(n_nodes=n_nodes)
+    fact_idx = len(sorted_facts)
 
-    result_table = dict()  # fact_idx: result, result is True if extension was found
-
-    def get_extensions(factory: ABASPSolverFactory, facts, result_table):
-        index = len(facts) - 1
-
-        if index not in result_table:
-            solver = factory.create_solver(facts)
-            models = solver.get_stable_models()
-            result_table[index] = models if models is not None else []
-
-        return result_table[index]
-
-    final_extensions = None
-    final_facts = None
-    final_fact_index = None
-
-    while left_idx <= right_idx:
-        mid = (left_idx + right_idx) // 2
-
-        exts_mid = get_extensions(factory, sorted_facts[:mid + 1], result_table)
-        exts_mid_next = get_extensions(factory, sorted_facts[:mid + 2], result_table)
-
-        if len(exts_mid) == 0:  # overshoot
-            right_idx = mid - 1
-        elif len(exts_mid_next) > 0:  # undershoot
-            left_idx = mid + 1
-        else:
-            # mid is the largest index where extensions exist
-            final_extensions = exts_mid
-            # TODO: log final facts, index and extensions
-            final_facts = sorted_facts[:mid + 1]
-            final_fact_index = mid
+    while fact_idx >= 0:
+        solver = factory.create_solver(sorted_facts[:fact_idx])
+        models = solver.get_stable_models()
+        if models is not None and len(models) > 0:
             break
+        fact_idx -= 1
+    arrow_sets = [get_arrows_from_model(model) for model in models]
+    return arrow_sets, cg
 
-    arrow_sets = [get_arrows_from_model(model) for model in final_extensions]
-    return arrow_sets
+
+def get_best_model(models, n_nodes, cg, alpha=0.01):
+    if len(models) > 50000:
+        print("Pick the first 50,000 models for I calculation")
+        models = set(list(models)[:50000]) ## Limit the number of models to 30,000
+    
+    best_model = None
+    best_I = None
+    best_B_est = None
+    for n, model in tqdm(enumerate(models), desc="Models from ABAPC"):
+        ## derive B_est from the model
+        B_est = np.zeros((n_nodes, n_nodes))
+        for edge in model:
+            B_est[edge[0], edge[1]] = 1
+        print("DAG from d-ABA")
+        print(B_est)
+        G_est = nx.DiGraph(pd.DataFrame(B_est, columns=[f"X{i+1}" for i in range(B_est.shape[1])], index=[f"X{i+1}" for i in range(B_est.shape[1])]))
+        print(G_est.edges)
+        est_I = 0
+        for x,y in combinations(range(n_nodes), 2):
+            I_from_data = list(set(cg.sepset[x,y]))
+            for s,p in I_from_data:
+                PC_dep_type = 'indep' if p > alpha else 'dep'
+                s_text = [f"X{r+1}" for r in s]
+                dep_type = 'indep' if nx.algorithms.d_separated(G_est, {f"X{x+1}"}, {f"X{y+1}"}, set(s_text)) else 'dep'
+                I = initial_strength(p, len(s), alpha, 0.5, n_nodes)
+                if dep_type != PC_dep_type:
+                    est_I += -I
+                else:
+                    est_I += I
+        if best_model is None or best_I < est_I:
+            best_model = model
+            best_I = est_I
+            best_B_est = B_est
+    return best_model, best_B_est, best_I
