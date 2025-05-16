@@ -2,9 +2,9 @@
 
 ## Prerequisites
 
-Python 3.12
-conda 25.1 (Miniconda installation would suffice)
-R https://cran.rstudio.com/
+Python 3.12  
+conda 25.1 (Miniconda installation would suffice)  
+R https://cran.rstudio.com/  
 
 ## Installation
 
