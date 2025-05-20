@@ -31,8 +31,7 @@ class ABASPSolverFactory(CoreABASPSolverFactory):
     @staticmethod
     def _add_independence_rules(solver, paths, X, Y, S):
         indep_body = [assums.blocked_path(X, Y, path_id, S) for path_id in range(len(paths))]
-        if len(indep_body) > 0:  # avoid adding duplicate rule to the facts
-            solver.add_rule(assums.indep(X, Y, S), indep_body)
+        solver.add_rule(assums.indep(X, Y, S), indep_body)
 
     @staticmethod
     def _add_blocked_path_assumptions(solver, path_id, X, Y, S):
@@ -50,6 +49,15 @@ class ABASPSolverFactory(CoreABASPSolverFactory):
     @staticmethod
     def _add_dependence_rules(solver, path_id, X, Y, S):
         solver.add_rule(assums.dep(X, Y, S), [assums.active_path(X, Y, path_id, S)])
+    
+    @staticmethod
+    def _add_fact(solver, fact: Fact):
+        if fact.relation == RelationEnum.dep:
+            # add dependency fact
+            solver.add_rule(assums.dep(fact.node1, fact.node2, fact.node_set), [])
+        elif fact.relation == RelationEnum.indep:
+            # add independence fact
+            solver.add_rule(assums.indep(fact.node1, fact.node2, fact.node_set), [])
 
     def create_solver(self, facts: List[Fact]):
         '''
@@ -79,27 +87,16 @@ class ABASPSolverFactory(CoreABASPSolverFactory):
             paths = [tuple(p) for p in nx.all_simple_paths(graph, source=X, target=Y)]
             self._add_path_definition_rules(solver, paths, X, Y)
 
-            # add assumption
             self._add_indep_assumptions(solver, X, Y, S)
 
-            if fact.relation == RelationEnum.dep:
-                # add dependency fact
-                solver.add_rule(assums.dep(fact.node1, fact.node2, fact.node_set), [])
-                # add corresponding independence rules to attack
-                for path_id, my_path in enumerate(paths):
-                    # active path definition
-                    self._add_blocked_path_assumptions(solver, path_id, X, Y, S)
-                    # active path rule
-                    self._add_active_path_rules(solver, path_id, my_path, X, Y, S)
-                self._add_independence_rules(solver, paths, X, Y, S)
-            elif fact.relation == RelationEnum.indep:
-                # add independence fact
-                solver.add_rule(assums.indep(fact.node1, fact.node2, fact.node_set), [])
-                # add corresponding dependency rules to attack
-                for path_id, my_path in enumerate(paths):
-                    # active path definition
-                    self._add_blocked_path_assumptions(solver, path_id, X, Y, S)
-                    self._add_active_path_rules(solver, path_id, my_path, X, Y, S)
-                    self._add_dependence_rules(solver, path_id, X, Y, S)
+            for path_id, my_path in enumerate(paths):
+                # active path definition
+                self._add_blocked_path_assumptions(solver, path_id, X, Y, S)
+                self._add_active_path_rules(solver, path_id, my_path, X, Y, S)
+                self._add_dependence_rules(solver, path_id, X, Y, S)
+            
+            self._add_independence_rules(solver, paths, X, Y, S)
+
+            self._add_fact(solver, fact)
 
         return solver
