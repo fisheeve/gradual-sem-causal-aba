@@ -13,6 +13,8 @@ from ArgCausalDisco.utils.graph_utils import initial_strength
 from src.abasp.utils import Fact, RelationEnum, get_arrows_from_model
 from src.abasp.factory import ABASPSolverFactory
 
+from logger import logger
+
 
 def get_dataset(dataset_name='cancer',
                 seed=42,
@@ -45,8 +47,6 @@ def get_stable_arrow_sets(data,
             The stable models from the ABAPC algorithm
             in a form of arrow sets.
     """
-    # TODO: Refactor, make nicer
-    # TODO: Compare with method of eliminating from back, untill extension is found, see if faster or slower
     random_stability(seed)
     n_nodes = data.shape[1]
     cg = pc(data=data, alpha=alpha, indep_test=indep_test, uc_rule=uc_rule,
@@ -89,7 +89,7 @@ def get_stable_arrow_sets(data,
 
 def get_best_model(models, n_nodes, cg, alpha=0.01):
     if len(models) > 50000:
-        print("Pick the first 50,000 models for I calculation")
+        logger.info("Pick the first 50,000 models for I calculation")
         models = set(list(models)[:50000]) ## Limit the number of models to 30,000
     
     best_model = None
@@ -100,10 +100,8 @@ def get_best_model(models, n_nodes, cg, alpha=0.01):
         B_est = np.zeros((n_nodes, n_nodes))
         for edge in model:
             B_est[edge[0], edge[1]] = 1
-        print("DAG from d-ABA")
-        print(B_est)
+        logger.info(f"DAG from d-ABA: {B_est}")
         G_est = nx.DiGraph(pd.DataFrame(B_est, columns=[f"X{i+1}" for i in range(B_est.shape[1])], index=[f"X{i+1}" for i in range(B_est.shape[1])]))
-        print(G_est.edges)
         est_I = 0
         for x,y in combinations(range(n_nodes), 2):
             I_from_data = list(set(cg.sepset[x,y]))
