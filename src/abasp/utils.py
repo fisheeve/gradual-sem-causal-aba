@@ -79,3 +79,7 @@ class Fact:
     node2: int
     node_set: set
     score: float
+
+    def __post_init__(self):
+        if self.node1 > self.node2:
+            self.node1, self.node2 = self.node2, self.node1

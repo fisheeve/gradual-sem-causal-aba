@@ -60,18 +60,19 @@ class ABASPSolverFactory(CoreABASPSolverFactory):
         NOTE 2: don't consider paths that contain edges where nodes are independent according to external facts
 
         '''
-        solver = self.create_core_solver(facts)
-
-        # TODO: do not consider paths that have edges with nodes that are independent (for any set S)
         # not consider paths that have edges with nodes that are independent (for any set S)
-        # edges_to_remove = set()
-        # for fact in facts:
-        #     if fact.relation == RelationEnum.indep:
-        #         edges_to_remove.add((fact.node1, fact.node2))
+        edges_to_remove = set()
+        for fact in facts:
+            if fact.relation == RelationEnum.indep:
+                edges_to_remove.add((fact.node1, fact.node2))
 
+        frozenset_edges_to_remove = {frozenset(edge) for edge in edges_to_remove}
+        solver = self.create_core_solver(frozenset_edges_to_remove)
+
+        
         graph = nx.complete_graph(self.n_nodes)
         # remove edges that are independent according to external facts
-        # graph.remove_edges_from(edges_to_remove)
+        graph.remove_edges_from(edges_to_remove)
 
         for fact in facts:
             X, Y, S = fact.node1, fact.node2, fact.node_set

@@ -18,3 +18,9 @@ Create and setup a conda virtual environment:
 ```bash
 make
 ```
+
+## Unit-tests
+Run the following in the terminal
+```bash
+export PYTHOPATH=. && pytest tests/unit
+```

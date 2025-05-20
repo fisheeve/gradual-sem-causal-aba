@@ -58,8 +58,6 @@ def get_stable_arrow_sets(data,
         for sep_set, p in test_PC:
             dep_type_PC = "indep" if p > alpha else "dep"
             init_strength_value = initial_strength(p, len(sep_set), alpha, 0.5, n_nodes)
-            if node1 > node2:
-                node1, node2 = node2, node1
 
             fact = Fact(
                 relation=RelationEnum(dep_type_PC),

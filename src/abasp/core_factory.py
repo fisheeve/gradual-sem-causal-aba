@@ -1,3 +1,5 @@
+from typing import Set, FrozenSet
+from itertools import combinations
 import src.abasp.atoms as atoms
 import src.abasp.assumptions as assums
 from src.abasp.solver import Solver
@@ -82,36 +84,44 @@ class CoreABASPSolverFactory:
     def _add_collider_descendant_definition_rules(solver, X, Y, Z, N):
         solver.add_rule(atoms.descendant_of_collider(N, X, Y, Z), [atoms.collider(X, Y, Z), atoms.dpath(Y, N)])
 
-    def create_core_solver(self, facts):
+    def create_core_solver(self, edges_to_remove: Set[FrozenSet[int]]):
         """
         Create a core solver for the ABASP problem.
         It contains all graph edge assumptions, colliders and corresponding rules.
         NOTE: It does not contain active/blocked path rules and independence assumptions.
 
         """
-        # TODO: do not consider arr assumptions for paths that have edges with nodes that are independent (for any set S)
+        # do not consider arr assumptions for paths that have edges with nodes that are independent (for any set S)
 
         solver = Solver()
 
         for X, Y in unique_product(range(self.n_nodes), repeat=2):
+            if frozenset({X, Y}) in edges_to_remove:
+                continue
 
             if X < Y:  # for X, Y unique combinations
                 self._add_graph_edge_assumptions(solver, X, Y)
 
-                for S in powerset(range(self.n_nodes)):
-                    self._add_non_blocking_rules(solver, X, Y, S, self.n_nodes)
-
+                
             self._add_acyclicity_rules(solver, X, Y)
 
         for X, Y, Z in unique_product(range(self.n_nodes), repeat=3):
-            self._add_direct_path_definition_rules(solver, X, Y, Z)
 
-            if X < Z:
-                # X < Z is to avoid duplicates as colliders are symmetric
-                self._add_collider_definition_rules(solver, X, Y, Z)
+            if frozenset({X, Z}) not in edges_to_remove:
+                self._add_direct_path_definition_rules(solver, X, Y, Z)
 
-                for N in range(self.n_nodes):
-                    if N not in {X, Y, Z}:  # X, Y, Z, N unique
-                        self._add_collider_descendant_definition_rules(solver, X, Y, Z, N)
+            if frozenset({Y, X}) not in edges_to_remove and frozenset({Y, Z}) not in edges_to_remove:
+                if X < Z:
+                    # X < Z is to avoid duplicates as colliders are symmetric
+                    self._add_collider_definition_rules(solver, X, Y, Z)
+
+                    for N in range(self.n_nodes):
+                        if N not in {X, Y, Z}:  # X, Y, Z, N unique
+                            self._add_collider_descendant_definition_rules(solver, X, Y, Z, N)
+        
+        for X, Y in combinations(range(self.n_nodes), 2):
+            for S in powerset(range(self.n_nodes)):
+                self._add_non_blocking_rules(solver, X, Y, S, self.n_nodes)
+
 
         return solver

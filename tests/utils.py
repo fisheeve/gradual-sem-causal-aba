@@ -15,9 +15,6 @@ def parse_fact_line(line):
         node_set = node_set.strip()[1:].split('y')
         node_set = {int(x) for x in node_set if x.strip()}
 
-    if node1 > node2:
-        node1, node2 = node2, node1
-
     return Fact(
         relation=RelationEnum[relation.strip()],
         node1=node1,
