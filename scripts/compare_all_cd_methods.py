@@ -3,6 +3,7 @@ sys.path.insert(0, 'ArgCausalDisco/')
 sys.path.insert(0, 'notears/')
 
 import numpy as np
+from tqdm import tqdm
 import pandas as pd
 import time
 from pathlib import Path
@@ -74,15 +75,15 @@ def main(n_runs=50, sample_size=5000, device=0):
     mt_res = pd.DataFrame()
     mt_res_cpdag = pd.DataFrame()
 
-    for dataset_name in dataset_list:
-        for method in model_list:
+    for dataset_name in tqdm(dataset_list, desc="tqdm Datasets"):
+        for method in tqdm(model_list, desc="tqdm Methods"):
             random_stability(2024)
             seeds_list = np.random.randint(0, 10000, (n_runs,)).tolist()
             logger.info(f"Running {method} on {dataset_name} for {n_runs} times with seeds {seeds_list}")
 
             method_res = []
             method_res_cpdag = []
-            for seed in seeds_list:
+            for seed in tqdm(seeds_list, desc="tqdm Seeds"):
                 X_s, B_true = get_dataset(dataset_name,
                                           seed=seed,
                                           sample_size=sample_size)
