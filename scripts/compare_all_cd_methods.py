@@ -23,6 +23,7 @@ ALPHA = 0.01
 INDEP_TEST = 'fisherz'
 RESULTS_DIR = Path('results_pure_aba')
 RESULTS_DIR.mkdir(exist_ok=True)
+LOAD_SAVED = False
 
 dataset_list = [
     'cancer',
@@ -67,13 +68,25 @@ def main(n_runs=50, sample_size=5000, device=0):
     configure_r()
 
     version = f'bnlearn_{n_runs}rep'
+    mt_path = RESULTS_DIR / f"stored_results_{version}.csv"
+    mt_cpdag_path = RESULTS_DIR / f"stored_results_{version}_cpdag.csv"
 
     # setup previous causal disco codebase logger
     logger_setup(str(RESULTS_DIR / f'log_{version}.log'))
 
     res_columns = ['nnz', 'fdr', 'tpr', 'fpr', 'precision', 'recall', 'F1', 'shd', 'sid']
-    mt_res = pd.DataFrame()
-    mt_res_cpdag = pd.DataFrame()
+    if LOAD_SAVED:
+        try:
+            mt_res = pd.read_csv(mt_path)
+            mt_res_cpdag = pd.read_csv(mt_cpdag_path)
+            logger.info(f"Loaded previous results from {mt_path} and {mt_cpdag_path}")
+        except FileNotFoundError:
+            logger.warning(f"Previous results not found at {mt_path} or {mt_cpdag_path}, starting fresh.")
+            mt_res = pd.DataFrame()
+            mt_res_cpdag = pd.DataFrame()
+    else:
+        mt_res = pd.DataFrame()
+        mt_res_cpdag = pd.DataFrame()
 
     for dataset_name in tqdm(dataset_list, desc="tqdm Datasets"):
         for method in tqdm(model_list, desc="tqdm Methods"):
@@ -155,8 +168,8 @@ def main(n_runs=50, sample_size=5000, device=0):
             mt_res_cpdag = pd.concat([mt_res_cpdag, method_sum], sort=False)
 
             # cache intermediate results
-            mt_res.to_csv(RESULTS_DIR / f"stored_results_{version}.csv", index=False)
-            mt_res_cpdag.to_csv(RESULTS_DIR / f"stored_results_{version}_cpdag.csv", index=False)
+            mt_res.to_csv(mt_path, index=False)
+            mt_res_cpdag.to_csv(mt_cpdag_path, index=False)
 
 
 if __name__ == "__main__":

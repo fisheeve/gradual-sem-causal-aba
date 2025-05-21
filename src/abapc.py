@@ -83,6 +83,7 @@ def get_stable_arrow_sets(data,
         if models is not None and len(models) > 0:
             break
         fact_idx -= 1
+        logger.info(f"Trying with top {fact_idx} facts")
     arrow_sets = [get_arrows_from_model(model) for model in models]
     return arrow_sets, cg
 

@@ -51,7 +51,7 @@ def get_arrows_from_model(model: AssumptionSet):
         if assumption.startswith("arr_"):
             node1, node2 = parse_arrow(assumption)
             arrows.add((node1, node2))
-    return arrows
+    return frozenset(arrows)
 
 
 def get_graph_matrix(n_nodes, arrows):
