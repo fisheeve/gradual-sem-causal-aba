@@ -100,7 +100,6 @@ def get_best_model(models, n_nodes, cg, alpha=0.01):
         B_est = np.zeros((n_nodes, n_nodes))
         for edge in model:
             B_est[edge[0], edge[1]] = 1
-        logger.info(f"DAG from d-ABA: {B_est}")
         G_est = nx.DiGraph(pd.DataFrame(B_est, columns=[f"X{i+1}" for i in range(B_est.shape[1])], index=[f"X{i+1}" for i in range(B_est.shape[1])]))
         est_I = 0
         for x,y in combinations(range(n_nodes), 2):
@@ -118,4 +117,5 @@ def get_best_model(models, n_nodes, cg, alpha=0.01):
             best_model = model
             best_I = est_I
             best_B_est = B_est
+        logger.info(f"DAG from d-ABA: {best_B_est}")
     return best_model, best_B_est, best_I
