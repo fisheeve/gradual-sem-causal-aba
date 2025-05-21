@@ -19,6 +19,11 @@ Create and setup a python virtual environment, clone sub-repos, and install R pa
 make
 ```
 
+Activate the virtual environment before running experiments or tests:
+```bash
+source .venv/bin/activate
+```
+
 ## Unit-tests
 Run the following in the terminal
 ```bash
