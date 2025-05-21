@@ -3,8 +3,7 @@
 ## Prerequisites
 
 Python 3.12  
-R https://cran.rstudio.com/  
-[OPTIONAL] conda 25.1 (Miniconda installation would suffice)  
+R https://cran.rstudio.com/
 
 ## Installation
 
@@ -13,8 +12,9 @@ Clone the repo from GitHub.
 git clone git@github.com:fisheeve/gradual-sem-causal-aba.git
 cd gradual-sem-causal-aba
 ```
+Configure environment variables to make it work for your system by editing the .env file.
 
-Create and setup a conda virtual environment:
+Create and setup a python virtual environment, clone sub-repos, and install R packages required:
 ```bash
 make
 ```

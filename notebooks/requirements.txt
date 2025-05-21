@@ -1,0 +1,3 @@
+# extra requirements for visualisations in demo notebooks
+plotly==6.1.1
+kaleido==0.2.1
