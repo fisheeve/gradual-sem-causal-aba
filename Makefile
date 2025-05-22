@@ -2,12 +2,20 @@ PYTHON_VERSION=3.12
 ENV_NAME=aba-env
 VENV_DIR=.venv
 
-ifneq (,$(wildcard .env))
-    include .env
-    export
+ENV_READY := $(wildcard .env)
+
+ifeq ($(ENV_READY),)
+$(shell \
+	read -p "R_LIB_DIR is not set. Enter R library path (e.g. ~/R/library): " rlibdir; \
+	read -p "RPATH is not set. Enter Rscript path (e.g. /usr/bin/Rscript): " rpath; \
+	echo "R_LIB_DIR=$$rlibdir" > .env; \
+	echo "RPATH=$$rpath" >> .env; \
+	$(MAKE) --always-make --no-print-directory > /dev/null 2>&1; exit \
+)
 endif
 
-R_LIB_DIR?=$(HOME)/R/library
+include .env
+export
 
 .PHONY: install clean
 
@@ -36,11 +44,10 @@ install: clean
 
 	@echo "Installing additional dependencies..."
 	R_INTERACTIVE=FALSE R_PAPERSIZE=letter PAGER=cat R_OPTS="--no-save --no-restore --quiet" \
-	Rscript -e 'install.packages("BiocManager", repos="https://cloud.r-project.org", lib="$(R_LIB_DIR)")'
+	$(RPATH) -e 'install.packages("BiocManager", repos="https://cloud.r-project.org", lib="$(R_LIB_DIR)")'
 
 	R_INTERACTIVE=FALSE R_PAPERSIZE=letter PAGER=cat R_OPTS="--no-save --no-restore --quiet" \
-	Rscript -e '.libPaths(c("$(R_LIB_DIR)", .libPaths())); BiocManager::install(c("SID", "bnlearn", "pcalg", "kpcalg", "glmnet", "mboost"))'
-
+	$(RPATH) -e '.libPaths(c("$(R_LIB_DIR)", .libPaths())); BiocManager::install(c("SID", "bnlearn", "pcalg", "kpcalg", "glmnet", "mboost"))'
 clean:
 	@echo "Removing virtual environment '$(VENV_DIR)' or conda env '$(ENV_NAME)' (if exists)..."
 	@if command -v conda > /dev/null 2>&1; then \

@@ -14,7 +14,6 @@ Clone the repo from GitHub.
 git clone git@github.com:fisheeve/gradual-sem-causal-aba.git
 cd gradual-sem-causal-aba
 ```
-Configure environment variables to make it work for your system by editing the .env file.
 
 Create and setup a python virtual environment, clone sub-repos, and install R packages required:
 ```bash
@@ -22,6 +21,10 @@ make
 ```
 
 Activate the virtual environment before running experiments or tests:
+```bash
+conda activate aba-env
+```
+or if you don't have conda installed:
 ```bash
 source .venv/bin/activate
 ```
