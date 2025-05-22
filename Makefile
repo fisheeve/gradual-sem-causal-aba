@@ -28,11 +28,11 @@ install: clean
 	git clone https://github.com/briziorusso/ArgCausalDisco.git
 	git clone https://github.com/xunzheng/notears.git
 
-	@echo "[TODO: fix this somehow] Applying custom changes to ArgCausalDisco sub-repo..."
-	cd ArgCausalDisco && git apply ../causalaba.diff
-
 	@echo "[TODO: fix this somehow] Applying custom changes to aspforaba sub-repo..."
 	cd aspforaba && git apply ../aspforaba.diff
+
+	@echo "Preparing R library directory at $(R_LIB_DIR)..."
+	mkdir -p $(R_LIB_DIR)
 
 	@echo "Installing additional dependencies..."
 	R_INTERACTIVE=FALSE R_PAPERSIZE=letter PAGER=cat R_OPTS="--no-save --no-restore --quiet" \

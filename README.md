@@ -4,6 +4,8 @@
 
 Python 3.12  
 R https://cran.rstudio.com/
+[OPTIONAL] conda 25.1 (Miniconda installation would suffice)  
+
 
 ## Installation
 
@@ -27,5 +29,5 @@ source .venv/bin/activate
 ## Unit-tests
 Run the following in the terminal
 ```bash
-export PYTHOPATH=. && pytest tests/unit
+export PYTHONPATH=. && pytest tests/unit
 ```
