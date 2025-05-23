@@ -1,5 +1,5 @@
 import pytest
-from tests.utils import facts_from_file
+from src.utils import facts_from_file
 from src.abasp.factory import ABASPSolverFactory
 from src.abasp.utils import get_arrows_from_model, Fact, RelationEnum
 

@@ -29,6 +29,25 @@ def get_dataset(dataset_name='cancer',
     return X_s, B_true
 
 
+def get_stable_arrow_sets_from_facts(facts, n_nodes):
+    sorted_facts = sorted(facts, key=lambda x: x.score, reverse=True)
+
+    # remove facts staring from weakest
+
+    factory = ABASPSolverFactory(n_nodes=n_nodes)
+    fact_idx = len(sorted_facts)
+
+    while fact_idx >= 0:
+        solver = factory.create_solver(sorted_facts[:fact_idx])
+        models = solver.get_stable_models()
+        if models is not None and len(models) > 0:
+            break
+        fact_idx -= 1
+        logger.info(f"Trying with top {fact_idx} facts")
+    arrow_sets = [get_arrows_from_model(model) for model in models]
+    return arrow_sets
+
+
 def get_stable_arrow_sets(data,
                           seed=42,
                           alpha=0.01,
@@ -69,22 +88,8 @@ def get_stable_arrow_sets(data,
 
             if fact not in facts:
                 facts.append(fact)
+    arrow_sets = get_stable_arrow_sets_from_facts(facts, n_nodes)
 
-    sorted_facts = sorted(facts, key=lambda x: x.score, reverse=True)
-
-    # binary search to find the largest fact set where stable extensions exist
-
-    factory = ABASPSolverFactory(n_nodes=n_nodes)
-    fact_idx = len(sorted_facts)
-
-    while fact_idx >= 0:
-        solver = factory.create_solver(sorted_facts[:fact_idx])
-        models = solver.get_stable_models()
-        if models is not None and len(models) > 0:
-            break
-        fact_idx -= 1
-        logger.info(f"Trying with top {fact_idx} facts")
-    arrow_sets = [get_arrows_from_model(model) for model in models]
     return arrow_sets, cg
 
 
