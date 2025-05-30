@@ -60,6 +60,12 @@ def generate_random_bn_data(n_nodes=5, n_edges=6, n_samples=1000, seed=42, stand
     # Create DAG and model
     edges, nodes = create_random_dag(n_nodes, n_edges)
     model = DiscreteBayesianNetwork(edges)
+
+    # add nodes to the model
+    for node in nodes:
+        if node not in model.nodes():
+            model.add_node(node)
+
     generate_random_cpds(model, nodes)
     assert model.check_model()
 
