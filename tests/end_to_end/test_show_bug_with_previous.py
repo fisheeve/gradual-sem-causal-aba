@@ -4,7 +4,7 @@ sys.path.insert(0, 'notears/')
 
 from collections import defaultdict
 from ArgCausalDisco.abapc import ABAPC
-from src.abapc import get_stable_arrow_sets
+from src.abapc import get_arrow_sets
 
 
 def test_causalaba_equal_to_ABASP(mocker):
@@ -61,7 +61,7 @@ def test_causalaba_equal_to_ABASP(mocker):
                           scenario='test_cancer_5_nodes',
                           out_mode="optN")
 
-        abasp_models, _ = get_stable_arrow_sets(data, seed=seed, alpha=0.01)
+        abasp_models, _ = get_arrow_sets(data, seed=seed, alpha=0.01)
         abasp_models = {frozenset(model) for model in abasp_models}
 
     print('Old implementation models: ', models)

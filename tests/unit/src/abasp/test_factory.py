@@ -2,6 +2,7 @@ import pytest
 from src.utils import facts_from_file
 from src.abasp.factory import ABASPSolverFactory
 from src.abasp.utils import get_arrows_from_model, Fact, RelationEnum
+from src.utils import SemanticEnum
 
 
 @pytest.mark.parametrize(
@@ -14,7 +15,7 @@ def test_graph_examples(filepath, n_nodes, assert_equal, expected):
     facts = facts_from_file(filepath)
     factory = ABASPSolverFactory(n_nodes)
     solver = factory.create_solver(facts=facts)
-    models = solver.get_stable_models()
+    models = solver.enumerate_extensions(SemanticEnum.ST.value)
     arrow_sets = [get_arrows_from_model(model) for model in models]
 
     assert expected in arrow_sets

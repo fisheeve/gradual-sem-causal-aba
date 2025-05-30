@@ -1,5 +1,6 @@
 from src.abasp.core_factory import CoreABASPSolverFactory
 from src.abasp.utils import get_arrows_from_model
+from src.utils import SemanticEnum
 
 
 def test_all_3_node_graphs():
@@ -36,7 +37,7 @@ def test_all_3_node_graphs():
     ])
     factory = CoreABASPSolverFactory(3)
     solver = factory.create_core_solver(edges_to_remove=set())
-    models = solver.get_stable_models()
+    models = solver.enumerate_extensions(SemanticEnum.ST.value)
     arrow_sets = [frozenset(get_arrows_from_model(model)) for model in models]
 
     assert len(arrow_sets) == len(expected)

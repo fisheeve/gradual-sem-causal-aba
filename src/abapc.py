@@ -12,6 +12,7 @@ from ArgCausalDisco.utils.graph_utils import initial_strength
 
 from src.abasp.utils import Fact, RelationEnum, get_arrows_from_model
 from src.abasp.factory import ABASPSolverFactory
+from src.utils import SemanticEnum
 
 from logger import logger
 
@@ -29,7 +30,7 @@ def get_dataset(dataset_name='cancer',
     return X_s, B_true
 
 
-def get_stable_arrow_sets_from_facts(facts, n_nodes):
+def get_arrow_sets_from_facts(facts, n_nodes, semantics=SemanticEnum.ST):
     sorted_facts = sorted(facts, key=lambda x: x.score, reverse=True)
 
     # remove facts staring from weakest
@@ -39,8 +40,15 @@ def get_stable_arrow_sets_from_facts(facts, n_nodes):
 
     while fact_idx >= 0:
         solver = factory.create_solver(sorted_facts[:fact_idx])
-        models = solver.get_stable_models()
-        if models is not None and len(models) > 0:
+        models = solver.enumerate_extensions(semantics.value)
+        only_empty_model = (models is not None
+                            and len(models) == 1
+                            and len(models[0]) == 0)
+        break_condition = (models is not None
+                           and len(models) > 0
+                           and not only_empty_model
+                           )
+        if break_condition:
             break
         fact_idx -= 1
         logger.info(f"Trying with top {fact_idx} facts")
@@ -48,12 +56,13 @@ def get_stable_arrow_sets_from_facts(facts, n_nodes):
     return arrow_sets
 
 
-def get_stable_arrow_sets(data,
+def get_arrow_sets(data,
                           seed=42,
                           alpha=0.01,
                           indep_test='fisherz',
                           uc_rule=5,
-                          stable=True):
+                          stable=True,
+                          semantics=SemanticEnum.ST):
     """
     Get the stable models from the ABAPC algorithm
     Args:
@@ -88,7 +97,7 @@ def get_stable_arrow_sets(data,
 
             if fact not in facts:
                 facts.append(fact)
-    arrow_sets = get_stable_arrow_sets_from_facts(facts, n_nodes)
+    arrow_sets = get_arrow_sets_from_facts(facts, n_nodes, semantics=semantics)
 
     return arrow_sets, cg
 

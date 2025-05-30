@@ -2,7 +2,7 @@ from typing import Set, FrozenSet
 from itertools import combinations
 import src.abasp.atoms as atoms
 import src.abasp.assumptions as assums
-from src.abasp.solver import Solver
+from aspforaba.src.aspforaba import ABASolver
 from src.abasp.utils import unique_product, powerset
 
 
@@ -93,7 +93,7 @@ class CoreABASPSolverFactory:
         """
         # do not consider arr assumptions for paths that have edges with nodes that are independent (for any set S)
 
-        solver = Solver()
+        solver = ABASolver()
 
         for X, Y in unique_product(range(self.n_nodes), repeat=2):
             if frozenset({X, Y}) in edges_to_remove:

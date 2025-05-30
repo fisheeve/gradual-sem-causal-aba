@@ -16,7 +16,7 @@ from ArgCausalDisco.utils.helpers import random_stability
 from ArgCausalDisco.utils.helpers import random_stability, logger_setup
 from ArgCausalDisco.abapc import ABAPC
 
-from src.abapc import get_stable_arrow_sets, get_dataset, get_best_model
+from src.abapc import get_arrow_sets, get_dataset, get_best_model
 from logger import logger
 
 ALPHA = 0.01
@@ -72,7 +72,7 @@ def main(n_runs=50,
 
             # pure abapc
             start = time.time()
-            stable_arrow_sets, cg = get_stable_arrow_sets(X_s,
+            stable_arrow_sets, cg = get_arrow_sets(X_s,
                                                         seed=seed,
                                                         alpha=ALPHA,
                                                         indep_test=INDEP_TEST)

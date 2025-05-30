@@ -6,7 +6,7 @@ sys.path.insert(0, 'notears/')
 from src.gen_random_nx import generate_random_bn_data
 from ArgCausalDisco.utils.helpers import random_stability, logger_setup
 from ArgCausalDisco.abapc import ABAPC
-from src.abapc import get_stable_arrow_sets, get_best_model
+from src.abapc import get_arrow_sets, get_best_model
 from argparse import ArgumentParser
 from pathlib import Path
 import numpy as np
@@ -55,7 +55,7 @@ def main():
             )
 
             start = time.time()
-            stable_arrow_sets, cg = get_stable_arrow_sets(X_s,
+            stable_arrow_sets, cg = get_arrow_sets(X_s,
                                                           seed=seed,
                                                           alpha=ALPHA,
                                                           indep_test=INDEP_TEST)

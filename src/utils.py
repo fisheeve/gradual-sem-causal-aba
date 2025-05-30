@@ -1,5 +1,12 @@
 import os
 from src.abasp.utils import RelationEnum, Fact
+from enum import Enum
+
+
+class SemanticEnum(str, Enum):
+    ST = 'ST'  # Stable semantics
+    PR = 'PR'  # Preferred' semantics (maximally complete)
+    CO = 'CO'  # Complete semantics
 
 
 def configure_r(default_rpath='/usr/bin/Rscript',

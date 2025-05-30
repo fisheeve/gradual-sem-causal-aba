@@ -8,7 +8,7 @@ from pathlib import Path
 from ArgCausalDisco.utils.helpers import random_stability
 from ArgCausalDisco.abapc import ABAPC
 
-from src.abapc import get_stable_arrow_sets, get_dataset
+from src.abapc import get_arrow_sets, get_dataset
 
 
 def test_causalaba_equal_to_ABASP():
@@ -25,7 +25,7 @@ def test_causalaba_equal_to_ABASP():
                     scenario='test_cancer_5_nodes',
                     out_mode="optN")
     
-    abasp_models, _ = get_stable_arrow_sets(data, seed=seed)
+    abasp_models, _ = get_arrow_sets(data, seed=seed)
     abasp_models = {frozenset(model) for model in abasp_models}
 
     print(seed)

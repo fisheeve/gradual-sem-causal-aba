@@ -15,7 +15,7 @@ from ArgCausalDisco.utils.graph_utils import DAGMetrics, dag2cpdag
 from ArgCausalDisco.utils.helpers import random_stability, logger_setup
 from ArgCausalDisco.utils.data_utils import simulate_dag
 
-from src.abapc import get_stable_arrow_sets, get_dataset, get_best_model
+from src.abapc import get_arrow_sets, get_dataset, get_best_model
 from src.utils import configure_r
 from logger import logger
 
@@ -110,7 +110,7 @@ def main(n_runs=50, sample_size=5000, device=0):
                 elif method in model_list:
                     if method == 'pure_abapc':
                         start = time.time()
-                        stable_arrow_sets, cg = get_stable_arrow_sets(X_s,
+                        stable_arrow_sets, cg = get_arrow_sets(X_s,
                                                                       seed=seed,
                                                                       alpha=ALPHA,
                                                                       indep_test=INDEP_TEST)

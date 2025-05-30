@@ -8,7 +8,7 @@ from ArgCausalDisco.utils.graph_utils import set_of_models_to_set_of_graphs
 from ArgCausalDisco.utils.helpers import random_stability
 
 from src.utils import facts_from_file
-from src.abapc import get_stable_arrow_sets_from_facts
+from src.abapc import get_arrow_sets_from_facts
 
 import pandas as pd
 import networkx as nx
@@ -45,7 +45,7 @@ def test_randomG(n_nodes, edge_per_node):
 
     facts = facts_from_file(facts_location)
 
-    new_models = get_stable_arrow_sets_from_facts(facts, n_nodes)
+    new_models = get_arrow_sets_from_facts(facts, n_nodes)
 
     assert expected in models, f"Expected graph is not in old implementation models!"
     assert expected in new_models, f"Expected graph is not in new implementation models!"
