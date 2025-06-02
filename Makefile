@@ -34,13 +34,12 @@ install: clean
 	@echo "[TODO: fix this somehow] Applying custom changes to aspforaba sub-repo..."
 	cd aspforaba && git apply ../aspforaba.diff
 
-	@echo "Installing additional dependencies..."More actions
-	R_INTERACTIVE=FALSE R_PAPERSIZE=letter PAGER=cat R_OPTS="--no-save --no-restore --quiet" \More actions
-	Rscript -e 'install.packages("BiocManager", repos="https://cloud.r-project.org", lib="$(R_LIB_DIR)")'
+	@echo "Installing additional dependencies..."
+	R_INTERACTIVE=FALSE R_PAPERSIZE=letter PAGER=cat R_OPTS="--no-save --no-restore --quiet" \
+	$(RPATH) -e 'install.packages("BiocManager", repos="https://cloud.r-project.org", lib="$(R_LIB_DIR)")'
 
 	R_INTERACTIVE=FALSE R_PAPERSIZE=letter PAGER=cat R_OPTS="--no-save --no-restore --quiet" \
-	Rscript -e '.libPaths(c("$(R_LIB_DIR)", .libPaths())); BiocManager::install(c("SID", "bnlearn", "pcalg", "kpcalg", "glmnet", "mboost"))'
-
+	$(RPATH) -e '.libPaths(c("$(R_LIB_DIR)", .libPaths())); BiocManager::install(c("SID", "bnlearn", "pcalg", "kpcalg", "glmnet", "mboost"))'
 clean:
 	@echo "Removing virtual environment '$(VENV_DIR)' or conda env '$(ENV_NAME)' (if exists)..."
 	@if command -v conda > /dev/null 2>&1; then \
