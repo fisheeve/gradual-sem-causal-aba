@@ -99,7 +99,7 @@ def get_arrow_sets(data,
                 facts.append(fact)
     arrow_sets, num_facts = get_arrow_sets_from_facts(facts, n_nodes, semantics=semantics)
 
-    return arrow_sets, cg, num_facts
+    return arrow_sets, cg, num_facts, facts
 
 
 def get_matrix_from_arrow_set(arrow_set, n_nodes):
