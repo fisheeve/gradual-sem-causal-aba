@@ -3,14 +3,16 @@ sys.path.insert(0, 'ArgCausalDisco/')
 sys.path.insert(0, 'notears/')
 
 import time
+import json
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
 from pathlib import Path
 from argparse import ArgumentParser
-from src.utils import SemanticEnum
+from src.utils import SemanticEnum, configure_r
 from src.abapc import get_arrow_sets, get_best_model, get_dataset
 from ArgCausalDisco.utils.helpers import random_stability, logger_setup
+from ArgCausalDisco.utils.graph_utils import DAGMetrics, dag2cpdag
 
 
 ALPHA = 0.01
@@ -34,7 +36,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-
+    configure_r()
     out_path = Path(args.output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
@@ -62,7 +64,7 @@ def main():
                                                                   alpha=ALPHA,
                                                                   indep_test=INDEP_TEST,
                                                                   semantics=sem)
-                best_model, best_B_est, best_I = get_best_model(arrow_sets,
+                best_model, best_W_est, best_I = get_best_model(arrow_sets,
                                                                 n_nodes=n_nodes,
                                                                 cg=cg,
                                                                 alpha=ALPHA)
@@ -70,12 +72,19 @@ def main():
 
                 arrow_sets_dict[sem.name] = set(arrow_sets)
 
+                B_est = (best_W_est != 0).astype(int)
+                mt_cpdag = DAGMetrics(dag2cpdag(B_est), B_true).metrics
+                B_est = (best_W_est > 0).astype(int)
+                mt_dag = DAGMetrics(B_est, B_true).metrics
+
                 combined_res_dict[f'{sem.name}_elapsed'] = elapsed
                 combined_res_dict[f'{sem.name}_best_model'] = best_model
                 combined_res_dict[f'{sem.name}_best_I'] = best_I
                 combined_res_dict[f'{sem.name}_total_num_facts'] = len(facts)
                 combined_res_dict[f'{sem.name}_used_num_facts'] = num_facts
                 combined_res_dict[f'{sem.name}_num_models'] = len(arrow_sets_dict[sem.name])
+                combined_res_dict[f'{sem.name}_mt_dag'] = json.dumps(mt_dag, default=str)
+                combined_res_dict[f'{sem.name}_mt_cpdag'] = json.dumps(mt_cpdag, default=str)
 
             combined_res_dict.update({
                 'n_nodes': n_nodes,
