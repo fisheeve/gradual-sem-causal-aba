@@ -9,7 +9,8 @@ class SemanticEnum(str, Enum):
     CO = 'CO'  # Complete semantics
 
 
-def configure_r(default_rpath='/usr/bin/Rscript'):
+def configure_r(default_rpath='/usr/bin/Rscript',
+                default_r_libs='~/R/library'):
     """
     Configure R settings for the cdt package.
     Is necessary for SID metric evaluation.
@@ -27,6 +28,9 @@ def configure_r(default_rpath='/usr/bin/Rscript'):
 
     # Set R options to suppress interactive checks (e.g., package updates)
     os.environ['R_OPTS'] = '--no-save --no-restore --quiet'  # Silent execution
+
+    r_libs = os.environ.get('R_LIB_DIR', default_r_libs)
+    os.environ['R_LIBS_USER'] = os.path.expanduser(r_libs)
 
 
 def parse_fact_line(line):
