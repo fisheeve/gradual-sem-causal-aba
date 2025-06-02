@@ -2,25 +2,26 @@ import sys
 sys.path.insert(0, 'ArgCausalDisco/')
 sys.path.insert(0, 'notears/')
 
-
-from src.gen_random_nx import generate_random_bn_data
-from ArgCausalDisco.utils.helpers import random_stability, logger_setup
-from src.abapc import get_arrow_sets, get_best_model
-from src.utils import SemanticEnum
-from argparse import ArgumentParser
-from pathlib import Path
-import numpy as np
-from tqdm import tqdm
-import pandas as pd
 import time
+import pandas as pd
+from tqdm import tqdm
+import numpy as np
+from pathlib import Path
+from argparse import ArgumentParser
+from src.utils import SemanticEnum
+from src.abapc import get_arrow_sets, get_best_model, get_dataset
+from ArgCausalDisco.utils.helpers import random_stability, logger_setup
 
 
 ALPHA = 0.01
 INDEP_TEST = 'fisherz'
 EDGE_NODE_RATIO = 1
-N_NODES = [3, 4, 5, 6, 
-        #    7, 8, 9, 10
-           ]
+DATASETS = [
+    'cancer',
+    'earthquake',
+    'survey',
+    # 'asia'
+]
 
 
 def parse_args():
@@ -37,23 +38,19 @@ def main():
     out_path = Path(args.output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
-    logger_setup(str(out_path / 'log_compare_abapc.log'))
+    logger_setup(str(out_path / 'log_compare_sem_bnlearn.log'))
 
     random_stability(2025)
     seeds_list = np.random.randint(0, 10000, (args.n_runs,)).tolist()
     df = pd.DataFrame()
 
-    for n_nodes in tqdm(N_NODES, desc="tqdm Nodes"):
-        n_edges = int(n_nodes * EDGE_NODE_RATIO)
+    for dataset_name in tqdm(DATASETS, desc="tqdm Datasets"):
 
         for seed in tqdm(seeds_list, desc="tqdm Seeds"):
-            X_s, B_true = generate_random_bn_data(
-                n_nodes=n_nodes,
-                n_edges=n_edges,
-                n_samples=args.sample_size,
-                seed=seed,
-                standardise=True
-            )
+            X_s, B_true = get_dataset(dataset_name,
+                                      seed=seed,
+                                      sample_size=args.sample_size)
+            n_nodes = X_s.shape[1]
 
             arrow_sets_dict = dict()
             combined_res_dict = dict()
@@ -71,7 +68,7 @@ def main():
                                                                 alpha=ALPHA)
                 elapsed = time.time() - start
 
-                arrow_sets_dict[sem.name]= set(arrow_sets)
+                arrow_sets_dict[sem.name] = set(arrow_sets)
 
                 combined_res_dict[f'{sem.name}_elapsed'] = elapsed
                 combined_res_dict[f'{sem.name}_best_model'] = best_model
@@ -80,10 +77,9 @@ def main():
                 combined_res_dict[f'{sem.name}_used_num_facts'] = num_facts
                 combined_res_dict[f'{sem.name}_num_models'] = len(arrow_sets_dict[sem.name])
 
-
             combined_res_dict.update({
                 'n_nodes': n_nodes,
-                'n_edges': n_edges,
+                'dataset_name': dataset_name,
                 'seed': seed,
                 'is_best_st_in_all_co': combined_res_dict[f'{SemanticEnum.ST.name}_best_model'] in arrow_sets_dict[SemanticEnum.CO.name],
                 'is_best_st_in_all_pr': combined_res_dict[f'{SemanticEnum.ST.name}_best_model'] in arrow_sets_dict[SemanticEnum.PR.name],
@@ -95,7 +91,7 @@ def main():
 
             df = pd.concat([df, pd.DataFrame([combined_res_dict])], ignore_index=True)
 
-            df.to_csv(out_path / f'compare_semantics_random.csv', index=False)
+            df.to_csv(out_path / f'compare_semantics_bnlearn.csv', index=False)
 
 
 if __name__ == "__main__":
