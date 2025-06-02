@@ -1,6 +1,7 @@
 #!/bin/bash
 
-echo ${PBS_O_WORKDIR}
+cd $PBS_O_WORKDIR
+export PYTHONPATH=.
 # Read and export environment variables from .env file
 if [ -f "${PBS_O_WORKDIR}/.env" ]; then
     echo "Loading environment variables from .env file..."
@@ -22,4 +23,3 @@ eval "$(~/miniforge3/bin/conda shell.bash hook)"
 
 source activate "aba-env"
 
-cd $PBS_O_WORKDIR

@@ -1,12 +1,14 @@
 #!/bin/bash
 #PBS -l walltime=12:00:00
-#PBS -l select=1:ncpus=16:mem=128gb:ngpus=1
+#PBS -l select=1:ncpus=16:mem=128gb:cpu_type=rome
 #PBS -N bnlearn_aba_experiment
 
-cd $PBS_O_WORKDIR
-
 # Setup env variables and the python venv
+cd $PBS_O_WORKDIR
 . scripts/shell_scripts/setup.sh
+
+module load R
+export CUDA_VISIBLE_DEVICES="[]"
 
 python scripts/python_scripts/compare_all_cd_methods.py \
     --n-runs 50 \
