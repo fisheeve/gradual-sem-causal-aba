@@ -43,7 +43,7 @@ def get_arrow_sets_from_facts(facts, n_nodes, semantics=SemanticEnum.ST):
         models = solver.enumerate_extensions(semantics.value)
         only_empty_model = (models is not None
                             and len(models) == 1
-                            and len(models[0]) == 0)
+                            and len(models[0].assumptions) == 0)
         break_condition = (models is not None
                            and len(models) > 0
                            and not only_empty_model
