@@ -55,7 +55,7 @@ def main():
             )
 
             start = time.time()
-            stable_arrow_sets, cg = get_arrow_sets(X_s,
+            stable_arrow_sets, cg, _ = get_arrow_sets(X_s,
                                                           seed=seed,
                                                           alpha=ALPHA,
                                                           indep_test=INDEP_TEST)

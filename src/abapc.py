@@ -53,16 +53,16 @@ def get_arrow_sets_from_facts(facts, n_nodes, semantics=SemanticEnum.ST):
         fact_idx -= 1
         logger.info(f"Trying with top {fact_idx} facts")
     arrow_sets = [get_arrows_from_model(model) for model in models]
-    return arrow_sets
+    return arrow_sets, fact_idx
 
 
 def get_arrow_sets(data,
-                          seed=42,
-                          alpha=0.01,
-                          indep_test='fisherz',
-                          uc_rule=5,
-                          stable=True,
-                          semantics=SemanticEnum.ST):
+                   seed=42,
+                   alpha=0.01,
+                   indep_test='fisherz',
+                   uc_rule=5,
+                   stable=True,
+                   semantics=SemanticEnum.ST):
     """
     Get the stable models from the ABAPC algorithm
     Args:
@@ -97,29 +97,45 @@ def get_arrow_sets(data,
 
             if fact not in facts:
                 facts.append(fact)
-    arrow_sets = get_arrow_sets_from_facts(facts, n_nodes, semantics=semantics)
+    arrow_sets, num_facts = get_arrow_sets_from_facts(facts, n_nodes, semantics=semantics)
 
-    return arrow_sets, cg
+    return arrow_sets, cg, num_facts
+
+
+def get_matrix_from_arrow_set(arrow_set, n_nodes):
+    """
+    Get the adjacency matrix from the arrow set.
+    Args:
+        arrow_set: set
+            The arrow set to be converted to an adjacency matrix
+        n_nodes: int
+            The number of nodes in the graph
+    Returns:
+        B_est: np.array
+            The adjacency matrix of the graph
+    """
+    B_est = np.zeros((n_nodes, n_nodes), dtype=int)
+    for node1, node2 in arrow_set:
+        B_est[node1, node2] = 1
+    return B_est
 
 
 def get_best_model(models, n_nodes, cg, alpha=0.01):
     if len(models) > 50000:
         logger.info("Pick the first 50,000 models for I calculation")
-        models = set(list(models)[:50000]) ## Limit the number of models to 30,000
-    
+        models = set(list(models)[:50000])  # Limit the number of models to 30,000
+
     best_model = None
     best_I = None
     best_B_est = None
     for n, model in tqdm(enumerate(models), desc="Models from ABAPC"):
-        ## derive B_est from the model
-        B_est = np.zeros((n_nodes, n_nodes))
-        for edge in model:
-            B_est[edge[0], edge[1]] = 1
+        # derive B_est from the model
+        B_est = get_matrix_from_arrow_set(model, n_nodes)
         G_est = nx.DiGraph(pd.DataFrame(B_est, columns=[f"X{i+1}" for i in range(B_est.shape[1])], index=[f"X{i+1}" for i in range(B_est.shape[1])]))
         est_I = 0
-        for x,y in combinations(range(n_nodes), 2):
-            I_from_data = list(set(cg.sepset[x,y]))
-            for s,p in I_from_data:
+        for x, y in combinations(range(n_nodes), 2):
+            I_from_data = list(set(cg.sepset[x, y]))
+            for s, p in I_from_data:
                 PC_dep_type = 'indep' if p > alpha else 'dep'
                 s_text = [f"X{r+1}" for r in s]
                 dep_type = 'indep' if nx.algorithms.d_separated(G_est, {f"X{x+1}"}, {f"X{y+1}"}, set(s_text)) else 'dep'

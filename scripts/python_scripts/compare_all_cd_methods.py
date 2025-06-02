@@ -110,7 +110,7 @@ def main(n_runs=50, sample_size=5000, device=0):
                 elif method in model_list:
                     if method == 'pure_abapc':
                         start = time.time()
-                        stable_arrow_sets, cg = get_arrow_sets(X_s,
+                        stable_arrow_sets, cg, _ = get_arrow_sets(X_s,
                                                                       seed=seed,
                                                                       alpha=ALPHA,
                                                                       indep_test=INDEP_TEST)
