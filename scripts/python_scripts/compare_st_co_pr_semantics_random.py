@@ -2,7 +2,7 @@ import sys
 sys.path.insert(0, 'ArgCausalDisco/')
 sys.path.insert(0, 'notears/')
 
-
+from ArgCausalDisco.abapc import ABAPC
 from src.gen_random_nx import generate_random_bn_data
 from ArgCausalDisco.utils.helpers import random_stability, logger_setup
 from src.abapc import get_arrow_sets, get_best_model
@@ -39,7 +39,7 @@ def main():
 
     logger_setup(str(out_path / 'log_compare_abapc.log'))
 
-    random_stability(2025)
+    random_stability(2024)
     seeds_list = np.random.randint(0, 10000, (args.n_runs,)).tolist()
     df = pd.DataFrame()
 
@@ -80,6 +80,15 @@ def main():
                 combined_res_dict[f'{sem.name}_used_num_facts'] = num_facts
                 combined_res_dict[f'{sem.name}_num_models'] = len(arrow_sets_dict[sem.name])
 
+            start = time.time()
+            _ = ABAPC(data=X_s,
+                      seed=seed,
+                      alpha=ALPHA,
+                      indep_test=INDEP_TEST,
+                      scenario=f"abapc_nodes{n_nodes}_edges{n_edges}_random",
+                      out_mode="opt")
+            old_elapsed = time.time() - start
+            combined_res_dict['abapc_existing_elapsed'] = old_elapsed
 
             combined_res_dict.update({
                 'n_nodes': n_nodes,

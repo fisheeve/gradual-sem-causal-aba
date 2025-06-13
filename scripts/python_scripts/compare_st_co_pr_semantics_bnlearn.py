@@ -42,7 +42,7 @@ def main():
 
     logger_setup(str(out_path / 'log_compare_sem_bnlearn.log'))
 
-    random_stability(2025)
+    random_stability(2024)
     seeds_list = np.random.randint(0, 10000, (args.n_runs,)).tolist()
     df = pd.DataFrame()
 
