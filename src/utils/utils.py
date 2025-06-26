@@ -1,7 +1,5 @@
 import numpy as np
 from itertools import chain, combinations, product
-from enum import Enum
-from dataclasses import dataclass
 from aspforaba.src.aspforaba.abaf import AssumptionSet
 
 
@@ -67,19 +65,20 @@ def get_graph_matrix(n_nodes, arrows):
     return matrix
 
 
-class RelationEnum(str, Enum):
-    dep = "dep"
-    indep = "indep"
+def get_matrix_from_arrow_set(arrow_set, n_nodes):
+    """
+    Get the adjacency matrix from the arrow set.
+    Args:
+        arrow_set: set
+            The arrow set to be converted to an adjacency matrix
+        n_nodes: int
+            The number of nodes in the graph
+    Returns:
+        B_est: np.array
+            The adjacency matrix of the graph
+    """
+    B_est = np.zeros((n_nodes, n_nodes), dtype=int)
+    for node1, node2 in arrow_set:
+        B_est[node1, node2] = 1
+    return B_est
 
-
-@dataclass
-class Fact:
-    relation: RelationEnum
-    node1: int
-    node2: int
-    node_set: set
-    score: float
-
-    def __post_init__(self):
-        if self.node1 > self.node2:
-            self.node1, self.node2 = self.node2, self.node1

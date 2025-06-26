@@ -8,7 +8,8 @@ from pathlib import Path
 from ArgCausalDisco.utils.helpers import random_stability
 from ArgCausalDisco.abapc import ABAPC
 
-from src.abapc import get_arrow_sets, get_dataset
+from src.abapc import get_arrow_sets
+from src.utils.bn_utils import get_dataset
 
 
 def test_causalaba_equal_to_ABASP():

@@ -1,8 +1,9 @@
 import pytest
-from src.utils import facts_from_file
-from src.abasp.factory import ABASPSolverFactory
-from src.abasp.utils import get_arrows_from_model, Fact, RelationEnum
-from src.utils import SemanticEnum
+from src.utils.fact_utils import facts_from_file
+from src.causal_aba.factory import ABASPSolverFactory
+from src.utils.utils import get_arrows_from_model
+from src.utils.enums import Fact, RelationEnum
+from src.utils.enums import SemanticEnum
 
 
 @pytest.mark.parametrize(

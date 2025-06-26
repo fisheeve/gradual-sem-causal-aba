@@ -3,10 +3,10 @@ sys.path.insert(0, 'ArgCausalDisco/')
 sys.path.insert(0, 'notears/')
 
 from ArgCausalDisco.abapc import ABAPC
-from src.gen_random_nx import generate_random_bn_data
+from src.utils.gen_random_nx import generate_random_bn_data
 from ArgCausalDisco.utils.helpers import random_stability, logger_setup
 from src.abapc import get_arrow_sets, get_best_model
-from src.utils import SemanticEnum
+from src.utils.enums import SemanticEnum
 from argparse import ArgumentParser
 from pathlib import Path
 import numpy as np

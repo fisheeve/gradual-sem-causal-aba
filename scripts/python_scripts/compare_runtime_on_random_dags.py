@@ -3,7 +3,7 @@ sys.path.insert(0, 'ArgCausalDisco/')
 sys.path.insert(0, 'notears/')
 
 
-from src.gen_random_nx import generate_random_bn_data
+from src.utils.gen_random_nx import generate_random_bn_data
 from ArgCausalDisco.utils.helpers import random_stability, logger_setup
 from ArgCausalDisco.abapc import ABAPC
 from src.abapc import get_arrow_sets, get_best_model

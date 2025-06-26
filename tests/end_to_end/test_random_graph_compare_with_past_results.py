@@ -7,7 +7,7 @@ from ArgCausalDisco.utils.data_utils import simulate_dag
 from ArgCausalDisco.utils.graph_utils import set_of_models_to_set_of_graphs
 from ArgCausalDisco.utils.helpers import random_stability
 
-from src.utils import facts_from_file
+from src.utils.fact_utils import facts_from_file
 from src.abapc import get_arrow_sets_from_facts
 
 import pandas as pd

@@ -1,9 +1,9 @@
 from typing import Set, FrozenSet
 from itertools import combinations
-import src.abasp.atoms as atoms
-import src.abasp.assumptions as assums
+import src.causal_aba.atoms as atoms
+import src.causal_aba.assumptions as assums
 from aspforaba.src.aspforaba import ABASolver
-from src.abasp.utils import unique_product, powerset
+from src.utils.utils import unique_product, powerset
 
 
 class CoreABASPSolverFactory:

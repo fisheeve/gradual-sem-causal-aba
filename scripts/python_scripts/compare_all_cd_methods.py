@@ -15,8 +15,9 @@ from ArgCausalDisco.utils.graph_utils import DAGMetrics, dag2cpdag
 from ArgCausalDisco.utils.helpers import random_stability, logger_setup
 from ArgCausalDisco.utils.data_utils import simulate_dag
 
-from src.abapc import get_arrow_sets, get_dataset, get_best_model
-from src.utils import configure_r
+from src.abapc import get_arrow_sets, get_best_model
+from src.utils.bn_utils import get_dataset
+from src.utils.configure_r import configure_r
 from logger import logger
 
 ALPHA = 0.01

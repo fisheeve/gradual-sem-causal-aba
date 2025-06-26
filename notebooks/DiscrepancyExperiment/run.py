@@ -16,7 +16,8 @@ from ArgCausalDisco.utils.helpers import random_stability
 from ArgCausalDisco.utils.helpers import random_stability, logger_setup
 from ArgCausalDisco.abapc import ABAPC
 
-from src.abapc import get_arrow_sets, get_dataset, get_best_model
+from src.abapc import get_arrow_sets, get_best_model
+from src.utils.bn_utils import get_dataset
 from logger import logger
 
 ALPHA = 0.01

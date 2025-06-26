@@ -1,37 +1,29 @@
-from pathlib import Path
 from itertools import combinations
 from tqdm import tqdm
-import numpy as np
 import networkx as nx
 import pandas as pd
 
 from ArgCausalDisco.utils.helpers import random_stability
-from ArgCausalDisco.utils.data_utils import load_bnlearn_data_dag
 from ArgCausalDisco.cd_algorithms.PC import pc
 from ArgCausalDisco.utils.graph_utils import initial_strength
 
-from src.abasp.utils import Fact, RelationEnum, get_arrows_from_model
-from src.abasp.factory import ABASPSolverFactory
-from src.utils import SemanticEnum
+from src.utils.utils import get_arrows_from_model, get_matrix_from_arrow_set
+from src.utils.enums import Fact, RelationEnum
+from src.causal_aba.factory import ABASPSolverFactory
+from src.utils.enums import SemanticEnum
 
 from logger import logger
 
 
-def get_dataset(dataset_name='cancer',
-                seed=42,
-                sample_size=5000,
-                data_path=Path(__file__).resolve().parents[1] / 'ArgCausalDisco' / 'datasets'):
-    X_s, B_true = load_bnlearn_data_dag(dataset_name,
-                                        data_path,
-                                        sample_size,
-                                        seed=seed,
-                                        print_info=True,
-                                        standardise=True)
-    return X_s, B_true
-
-
 def get_arrow_sets_from_facts(facts, n_nodes, semantics=SemanticEnum.ST):
-    sorted_facts = sorted(facts, key=lambda x: x.score, reverse=True)
+    # deterministically sort the facts. 
+    # Even if same strength, still order is defined uniquely
+    sorted_facts = sorted(facts, 
+                          key=lambda x: (x.score, 
+                                         x.node1, 
+                                         x.node2, 
+                                         str(sorted(list(x.node_set)))), 
+                          reverse=True)
 
     # remove facts staring from weakest
 
@@ -100,24 +92,6 @@ def get_arrow_sets(data,
     arrow_sets, num_facts = get_arrow_sets_from_facts(facts, n_nodes, semantics=semantics)
 
     return arrow_sets, cg, num_facts, facts
-
-
-def get_matrix_from_arrow_set(arrow_set, n_nodes):
-    """
-    Get the adjacency matrix from the arrow set.
-    Args:
-        arrow_set: set
-            The arrow set to be converted to an adjacency matrix
-        n_nodes: int
-            The number of nodes in the graph
-    Returns:
-        B_est: np.array
-            The adjacency matrix of the graph
-    """
-    B_est = np.zeros((n_nodes, n_nodes), dtype=int)
-    for node1, node2 in arrow_set:
-        B_est[node1, node2] = 1
-    return B_est
 
 
 def get_best_model(models, n_nodes, cg, alpha=0.01):

@@ -1,11 +1,11 @@
 from typing import List
 import networkx as nx
 
-import src.abasp.atoms as atoms
-import src.abasp.assumptions as assums
+import src.causal_aba.atoms as atoms
+import src.causal_aba.assumptions as assums
 
-from src.abasp.core_factory import CoreABASPSolverFactory
-from src.abasp.utils import Fact, RelationEnum
+from src.causal_aba.core_factory import CoreABASPSolverFactory
+from src.utils.enums import Fact, RelationEnum
 
 
 class ABASPSolverFactory(CoreABASPSolverFactory):

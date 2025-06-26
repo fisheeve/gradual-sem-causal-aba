@@ -9,8 +9,10 @@ from tqdm import tqdm
 import numpy as np
 from pathlib import Path
 from argparse import ArgumentParser
-from src.utils import SemanticEnum, configure_r
-from src.abapc import get_arrow_sets, get_best_model, get_dataset
+from src.utils.configure_r import configure_r
+from src.utils.enums import SemanticEnum
+from src.abapc import get_arrow_sets, get_best_model
+from src.utils.bn_utils import get_dataset
 from ArgCausalDisco.utils.helpers import random_stability, logger_setup
 from ArgCausalDisco.utils.graph_utils import DAGMetrics, dag2cpdag
 

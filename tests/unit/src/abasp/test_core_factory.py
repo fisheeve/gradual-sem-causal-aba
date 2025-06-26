@@ -1,6 +1,6 @@
-from src.abasp.core_factory import CoreABASPSolverFactory
-from src.abasp.utils import get_arrows_from_model
-from src.utils import SemanticEnum
+from src.causal_aba.core_factory import CoreABASPSolverFactory
+from src.utils.utils import get_arrows_from_model
+from src.utils.enums import SemanticEnum
 
 
 def test_all_3_node_graphs():
