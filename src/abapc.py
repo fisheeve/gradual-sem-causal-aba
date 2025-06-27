@@ -32,7 +32,7 @@ def get_arrow_sets_from_facts(facts, n_nodes, semantics=SemanticEnum.ST):
 
     while fact_idx >= 0:
         solver = factory.create_solver(sorted_facts[:fact_idx])
-        models = solver.enumerate_extensions(semantics.value)
+        models = solver.enumerate_extensions(semantics.value, k=50000)  # Limit the number of models to 50,000
         only_empty_model = (models is not None
                             and len(models) == 1
                             and len(models[0].assumptions) == 0)
