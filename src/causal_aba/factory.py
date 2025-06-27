@@ -13,8 +13,9 @@ class ABASPSolverFactory(CoreABASPSolverFactory):
     Factory class for creating ABASP solvers with active/blocked path rules and independence assumptions.
     """
 
-    def __init__(self, n_nodes: int):
+    def __init__(self, n_nodes: int, optimise_remove_edges: bool = True):
         super().__init__(n_nodes)
+        self.optimise_remove_edges = optimise_remove_edges
 
     @staticmethod
     def _add_path_definition_rules(solver, paths, X, Y):
@@ -68,25 +69,34 @@ class ABASPSolverFactory(CoreABASPSolverFactory):
         NOTE 2: don't consider paths that contain edges where nodes are independent according to external facts
 
         '''
-        # not consider paths that have edges with nodes that are independent (for any set S)
-        edges_to_remove = set()
-        for fact in facts:
-            if fact.relation == RelationEnum.indep:
-                edges_to_remove.add((fact.node1, fact.node2))
-
-        frozenset_edges_to_remove = {frozenset(edge) for edge in edges_to_remove}
-        solver = self.create_core_solver(frozenset_edges_to_remove)
-
-        
         graph = nx.complete_graph(self.n_nodes)
-        # remove edges that are independent according to external facts
-        graph.remove_edges_from(edges_to_remove)
+
+        # not consider paths that have edges with nodes that are independent (for any set S)
+        if self.optimise_remove_edges:
+            edges_to_remove = set()
+            for fact in facts:
+                if fact.relation == RelationEnum.indep:
+                    edges_to_remove.add((fact.node1, fact.node2))
+            # remove edges that are independent according to external facts from graph
+            graph.remove_edges_from(edges_to_remove)
+            # provide edges to remove to core factory so that it removes them from the assumptions as well
+            frozenset_edges_to_remove = {frozenset(edge) for edge in edges_to_remove}
+            solver = self.create_core_solver(frozenset_edges_to_remove)
+        else:
+            solver = self.create_core_solver({})
+
+        all_paths = dict()
+        for fact in facts:
+            X, Y = fact.node1, fact.node2
+            if (X, Y) not in all_paths:
+                all_paths[(X, Y)] = [tuple(p) for p in nx.all_simple_paths(graph, source=X, target=Y)]
 
         for fact in facts:
             X, Y, S = fact.node1, fact.node2, fact.node_set
-            paths = [tuple(p) for p in nx.all_simple_paths(graph, source=X, target=Y)]
+            paths = all_paths.get((X, Y))
+            assert paths is not None, f"No paths found between {X} and {Y} in the graph. Something is wrong with path finding code above."
+    
             self._add_path_definition_rules(solver, paths, X, Y)
-
             self._add_indep_assumptions(solver, X, Y, S)
 
             for path_id, my_path in enumerate(paths):
