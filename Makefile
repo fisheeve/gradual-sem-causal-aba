@@ -29,7 +29,8 @@ install: clean
 	@echo "Cloning required repositories..."
 	git clone https://bitbucket.org/coreo-group/aspforaba.git
 	git clone https://github.com/briziorusso/ArgCausalDisco.git
-	git clone https://github.com/xunzheng/notears.git
+	git clone https://github.com/xunzheng/notears.
+	gir clone https://github.com/briziorusso/GradualABA.git
 
 	@echo "[TODO: fix this somehow] Applying custom changes to aspforaba sub-repo..."
 	cd aspforaba && git apply ../aspforaba.diff
@@ -51,3 +52,4 @@ clean:
 	-rm -rf aspforaba
 	-rm -rf ArgCausalDisco
 	-rm -rf notears
+	-rm -rf GradualABA
