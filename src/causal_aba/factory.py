@@ -45,17 +45,17 @@ class ABASPSolverFactory(CoreABASPSolverFactory):
     def _add_active_path_rules(solver, path_id, path_nodes, X, Y, S):
         non_blocking_body = [atoms.non_blocking(path_nodes[i], path_nodes[i-1], path_nodes[i+1], S)
                              for i in range(1, len(path_nodes)-1)]
-        solver.add_rule(assums.active_path(X, Y, path_id, S), [atoms.path(X, Y, path_id), *non_blocking_body])
+        solver.add_rule(assums.contrary(assums.blocked_path(X, Y, path_id, S)), [atoms.path(X, Y, path_id), *non_blocking_body])
 
     @staticmethod
     def _add_dependence_rules(solver, path_id, X, Y, S):
-        solver.add_rule(assums.dep(X, Y, S), [assums.active_path(X, Y, path_id, S)])
+        solver.add_rule(assums.contrary(assums.indep(X, Y, S)), [assums.contrary(assums.blocked_path(X, Y, path_id, S))])
     
     @staticmethod
     def _add_fact(solver, fact: Fact):
         if fact.relation == RelationEnum.dep:
             # add dependency fact
-            solver.add_rule(assums.dep(fact.node1, fact.node2, fact.node_set), [])
+            solver.add_rule(assums.contrary(assums.indep(fact.node1, fact.node2, fact.node_set)), [])
         elif fact.relation == RelationEnum.indep:
             # add independence fact
             solver.add_rule(assums.indep(fact.node1, fact.node2, fact.node_set), [])

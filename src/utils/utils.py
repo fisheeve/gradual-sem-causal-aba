@@ -52,19 +52,6 @@ def get_arrows_from_model(model: AssumptionSet):
     return frozenset(arrows)
 
 
-def get_graph_matrix(n_nodes, arrows):
-    """
-    Get the adjacency matrix of a graph.
-    :param n_nodes: The number of nodes in the graph.
-    :param arrows: The arrows in the graph.
-    :return: A numpy array representing the adjacency matrix of the graph.
-    """
-    matrix = np.zeros((n_nodes, n_nodes), dtype=int)
-    for node1, node2 in arrows:
-        matrix[node1, node2] = 1
-    return matrix
-
-
 def get_matrix_from_arrow_set(arrow_set, n_nodes):
     """
     Get the adjacency matrix from the arrow set.
@@ -81,4 +68,3 @@ def get_matrix_from_arrow_set(arrow_set, n_nodes):
     for node1, node2 in arrow_set:
         B_est[node1, node2] = 1
     return B_est
-

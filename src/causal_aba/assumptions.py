@@ -16,6 +16,9 @@ def noe(X, Y):
 
 
 def edge(X, Y):
+    """WARNING: This one is not an assumption.
+       It is an atom that is the contrary of no-edge (noe) assumption.
+    """
     return contrary(noe(X, Y))
 
 
@@ -27,10 +30,6 @@ def indep(X, Y, S):
     return f"indep_{X}_{Y}__" + '_'.join([str(i) for i in S])
 
 
-def dep(X, Y, S):
-    return contrary(indep(X, Y, S))
-
-
 def blocked_path(source, target, path_id: int, S: set):
     S = sorted(list(S))
     # is symmetric with respect to source and target
@@ -39,5 +38,20 @@ def blocked_path(source, target, path_id: int, S: set):
     return f"blocked_path_{source}_{target}__{path_id}__" + '_'.join([str(i) for i in S])
 
 
+# Assumptions below this point are not present in the original Causal ABAF.
+# However they are used in other experiments.
+
+def dep(X, Y, S):
+    # is symmetric with respect to X and Y
+    if X > Y:
+        X, Y = Y, X
+    S = sorted(list(S))
+    return f"dep_{X}_{Y}__" + '_'.join([str(i) for i in S])
+
+
 def active_path(source, target, path_id: int, S: set):
-    return contrary(blocked_path(source, target, path_id, S))
+    S = sorted(list(S))
+    # is symmetric with respect to source and target
+    if source > target:
+        source, target = target, source
+    return f"active_path_{source}_{target}__{path_id}__" + '_'.join([str(i) for i in S])
