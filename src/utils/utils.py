@@ -52,6 +52,20 @@ def get_arrows_from_model(model: AssumptionSet):
     return frozenset(arrows)
 
 
+def get_arrows_from_assumptions(assumptions: list):
+    """
+    Get the arrows from a model.
+    :param model: The model to extract arrows from.
+    :return: A set of tuples representing the arrows in the model.
+    """
+    arrows = set()
+    for assumption in assumptions:
+        if assumption.startswith("arr_"):
+            node1, node2 = parse_arrow(assumption)
+            arrows.add((node1, node2))
+    return frozenset(arrows)
+
+
 def get_matrix_from_arrow_set(arrow_set, n_nodes):
     """
     Get the adjacency matrix from the arrow set.

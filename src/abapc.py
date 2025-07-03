@@ -48,26 +48,11 @@ def get_arrow_sets_from_facts(facts, n_nodes, semantics=SemanticEnum.ST):
     return arrow_sets, fact_idx
 
 
-def get_arrow_sets(data,
-                   seed=42,
-                   alpha=0.01,
-                   indep_test='fisherz',
-                   uc_rule=5,
-                   stable=True,
-                   semantics=SemanticEnum.ST):
-    """
-    Get the stable models from the ABAPC algorithm
-    Args:
-        X_s: np.array
-            The dataset to be used for the ABAPC algorithm
-        seed: int
-            The seed to be used for the random number generator
-    Returns:
-        models: list
-            The stable models from the ABAPC algorithm
-            in a form of arrow sets.
-    """
-    random_stability(seed)
+def get_cg_and_facts(data,
+                     alpha=0.01,
+                     indep_test='fisherz',
+                     uc_rule=5,
+                     stable=True):
     n_nodes = data.shape[1]
     cg = pc(data=data, alpha=alpha, indep_test=indep_test, uc_rule=uc_rule,
             stable=stable, show_progress=True, verbose=True)
@@ -89,6 +74,35 @@ def get_arrow_sets(data,
 
             if fact not in facts:
                 facts.append(fact)
+    return cg, facts
+
+
+def get_arrow_sets(data,
+                   seed=42,
+                   alpha=0.01,
+                   indep_test='fisherz',
+                   uc_rule=5,
+                   stable=True,
+                   semantics=SemanticEnum.ST):
+    """
+    Get the stable models from the ABAPC algorithm
+    Args:
+        X_s: np.array
+            The dataset to be used for the ABAPC algorithm
+        seed: int
+            The seed to be used for the random number generator
+    Returns:
+        models: list
+            The stable models from the ABAPC algorithm
+            in a form of arrow sets.
+    """
+    random_stability(seed)
+    n_nodes = data.shape[1]
+    cg, facts = get_cg_and_facts(data,
+                                 alpha=alpha,
+                                 indep_test=indep_test,
+                                 uc_rule=uc_rule,
+                                 stable=stable)
     arrow_sets, num_facts = get_arrow_sets_from_facts(facts, n_nodes, semantics=semantics)
 
     return arrow_sets, cg, num_facts, facts
