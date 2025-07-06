@@ -18,7 +18,9 @@ class CoreABASPSolverFactory:
     """
 
     def __init__(self,
-                 n_nodes: int):
+                 n_nodes: int,
+                 abaf_class=ABASolver):
+        self.abaf_class = abaf_class
         self.n_nodes = n_nodes
 
     @staticmethod
@@ -93,7 +95,7 @@ class CoreABASPSolverFactory:
         """
         # do not consider arr assumptions for paths that have edges with nodes that are independent (for any set S)
 
-        solver = ABASolver()
+        solver = self.abaf_class()
 
         for X, Y in unique_product(range(self.n_nodes), repeat=2):
             if frozenset({X, Y}) in edges_to_remove:
