@@ -15,7 +15,7 @@ from src.utils.configure_r import configure_r
 from src.abapc import get_cg_and_facts
 from src.utils.bn_utils import get_dataset
 from src.gradual.naive.causal_bsaf import NaiveCausalBSAF
-from src.gradual.model_wrappers import ModelWrapper, ModelEnum
+from src.gradual.model_wrapper import ModelWrapper, ModelEnum
 from ArgCausalDisco.utils.helpers import random_stability, logger_setup
 from ArgCausalDisco.utils.graph_utils import DAGMetrics, dag2cpdag
 from ArgCausalDisco.utils.data_utils import simulate_dag

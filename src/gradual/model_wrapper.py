@@ -54,7 +54,7 @@ class ModelWrapper:
                                   LinearInfluence,
                                   MLPBasedInfluence,
                                   None] = None,
-                conservativeness: float = 1,
+                 conservativeness: float = 1,
                  ):
         """
         Initialize the model wrapper with a BSAF instance.
@@ -75,7 +75,8 @@ class ModelWrapper:
         self.solved = False
 
         # dictionary (assumption_name: strength) for arr and noe assumptions
-        self.arrow_strengths_dict = None
+        self.arrow_strengths = None
+        self.indep_strengths = None
 
         if ((set_aggregation is None
              or aggregation is None
@@ -109,19 +110,44 @@ class ModelWrapper:
             raise ValueError(f"Model {model_name} is not supported. "
                              f"Please use one of {list(ModelEnum)}.")
 
-    def solve(self, iterations: int = 10,
+    def solve(self,
+              iterations: int = 10,
               verbose: bool = False) -> Dict[Assumption, float]:
         self.solved = True
-        state = self.model.solve(iterations=iterations,
-                                 generate_plot=True,
-                                 verbose=verbose)
+        self.model.solve(iterations=iterations,
+                         generate_plot=True,
+                         verbose=verbose)
+
+        graph_data = self.model.graph_data
+
         self.arrow_strengths = {
             asm_name: strength_evo[-1][1]
-            for asm_name, strength_evo in self.model.graph_data.items()
+            for asm_name, strength_evo in graph_data.items()
             if asm_name.startswith(('arr', 'noe'))
         }
+        self.indep_strengths = {
+            asm_name: strength_evo[-1][1]
+            for asm_name, strength_evo in graph_data.items()
+            if asm_name.startswith(('indep', 'dep'))
+        }
 
-        return state
+        return graph_data
+
+    @staticmethod
+    def get_graph_strength_from_arrow_strengths(graph: np.ndarray, arrow_strengths: dict) -> float:
+        """ Score provided graph based on arrow strengths."""
+        score = 0.0
+        for i in range(graph.shape[0]):
+            for j in range(graph.shape[1]):
+                try:
+                    if graph[i, j] > 0:
+                        score += arrow_strengths[asm.arr(i, j)]
+                    else:  # else if its 0
+                        score += arrow_strengths[asm.noe(i, j)]
+                except KeyError:
+                    logger.warning(f"Arrow assumption {asm.arr(i, j)} not found in arrow strengths.")
+                    return None
+        return score
 
     def get_graph_strength(self, graph: np.ndarray) -> float:
         """ Score provided graph based on arrow strengths."""
@@ -131,18 +157,7 @@ class ModelWrapper:
         if self.arrow_strengths is None:
             raise RuntimeError("Arrow strengths have not been computed. Please call solve() first.")
 
-        score = 0.0
-        for i in range(graph.shape[0]):
-            for j in range(graph.shape[1]):
-                try:
-                    if graph[i, j] > 0:
-                        score += self.arrow_strengths[asm.arr(i, j)]
-                    else:  # else if its 0
-                        score += self.arrow_strengths[asm.noe(i, j)]
-                except KeyError:
-                    logger.warning(f"Arrow assumption {asm.arr(i, j)} not found in arrow strengths.")
-                    return None
-        return score
+        return self.get_graph_strength_from_arrow_strengths(graph, self.arrow_strengths)
 
     def _get_nodes_from_arr_or_noe(self, asm_name: str) -> tuple:
         """
@@ -206,3 +221,25 @@ class ModelWrapper:
                 accepted_assumptions),
             self.n_nodes)
         return greedy_matrix
+
+    def get_arrow_strengths(self) -> Dict[str, float]:
+        if not self.solved:
+            raise RuntimeError("Model has not been solved yet. Please call solve() first.")
+
+        if self.arrow_strengths is None:
+            raise RuntimeError("Arrow strengths have not been computed. Please call solve() first.")
+        return self.arrow_strengths
+
+    def get_indep_strengths(self) -> Dict[str, float]:
+        """
+        Get the strengths of independence assumptions.
+        
+        Returns:
+            A dictionary mapping independence assumption names to their strengths.
+        """
+        if not self.solved:
+            raise RuntimeError("Model has not been solved yet. Please call solve() first.")
+        if self.indep_strengths is None:
+            raise RuntimeError("Arrow strengths have not been computed. Please call solve() first.")
+
+        return self.indep_strengths

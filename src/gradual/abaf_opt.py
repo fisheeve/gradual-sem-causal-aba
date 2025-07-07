@@ -2,6 +2,8 @@ from GradualABA.ABAF import ABAF, Sentence, Assumption
 from GradualABA.BSAF import Argument
 from itertools import product
 from typing import Set, FrozenSet
+from tqdm import tqdm
+from logger import logger
 
 
 class ABAFOptimised(ABAF):
@@ -61,7 +63,7 @@ class ABAFOptimised(ABAF):
             deriv_table[sent] = all_derivations
             return all_derivations
 
-    def _prune_supersets_inplace(self, my_set: Set[FrozenSet]) -> Set[FrozenSet]:
+    def _prune_supersets(self, my_set: Set[FrozenSet]) -> Set[FrozenSet]:
         """
         Prune the nested set by removing supersets.
 
@@ -69,11 +71,22 @@ class ABAFOptimised(ABAF):
         In the context of derivations this ensures that we only keep the minimal sets of assumptions
         that can derive a given sentence.
         """
+        pruned_set = set()  # create a copy to avoid modifying the set while iterating
         for item in my_set:
-            if any(item.issuperset(other) for other in my_set if item != other):
-                # if item is a superset of any other item, remove it
-                my_set.remove(item)
-        return my_set
+            remove_set = set()
+            add_item = True
+            for other_item in pruned_set:
+                if item.issuperset(other_item):
+                    # if item is a superset of other_item, we do not add it
+                    add_item = False
+                    break
+                elif item.issubset(other_item):
+                    # if item is a subset of other_item, we remove other_item
+                    remove_set.add(other_item)
+            pruned_set.difference_update(remove_set)
+            if add_item:
+                pruned_set.add(item)
+        return pruned_set
 
     def _create_argument(self, sent: Sentence, deriv: FrozenSet[Assumption], weight_agg):
         """
@@ -126,7 +139,7 @@ class ABAFOptimised(ABAF):
         deriv_table = dict()
         contraries = set()
 
-        for assumption in self.assumptions:
+        for assumption in tqdm(self.assumptions, desc="Building arguments"):
             # get all derivations for the assumption
             self._get_derivations(assumption, deriv_table, visited={assumption})
             # get all derivations for the contrary of the assumption
@@ -140,8 +153,9 @@ class ABAFOptimised(ABAF):
         }
 
         if prune_supersets:
+            logger.info("Pruning supersets from derivations")
             asm_and_contrary_derivs = {
-                sent: self._prune_supersets_inplace(derivs)
+                sent: self._prune_supersets(derivs)
                 for sent, derivs in asm_and_contrary_derivs.items()
             }
 

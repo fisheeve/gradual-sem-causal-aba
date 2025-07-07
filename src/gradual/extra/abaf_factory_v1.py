@@ -1,17 +1,16 @@
-from typing import List
 import networkx as nx
+from tqdm import tqdm
 
 import src.causal_aba.atoms as atoms
 import src.causal_aba.assumptions as assums
 
 from src.causal_aba.core_factory import CoreABASPSolverFactory
-from src.utils.enums import Fact, RelationEnum
-from src.gradual.extra.abaf import ABAF
+from src.gradual.abaf_builder import ABAFBuilder
 from itertools import combinations
 from src.utils.utils import powerset
 
 
-class ExtraABAFFactory(CoreABASPSolverFactory):
+class FactoryV1(CoreABASPSolverFactory):
     """
     Factory class for creating ABAF with active/blocked path rules and independence assumptions.
     In contrast to ABASPSolverFactory, this factory uses active path assumptions instead
@@ -19,9 +18,8 @@ class ExtraABAFFactory(CoreABASPSolverFactory):
     linking back independence to active paths and active paths to arrows.
     """
 
-    def __init__(self, n_nodes: int, add_reverse_rules: bool = True):
-        super().__init__(n_nodes, abaf_class=ABAF)
-        self.add_reverse_rules = add_reverse_rules
+    def __init__(self, n_nodes: int):
+        super().__init__(n_nodes, abaf_class=ABAFBuilder)
 
     @staticmethod
     def _add_path_definition_rules(solver, paths: list, X: int, Y: int):
@@ -37,16 +35,9 @@ class ExtraABAFFactory(CoreABASPSolverFactory):
 
     @staticmethod
     def _add_active_path_assumptions(solver, path_id: int, X: int, Y: int, S: set):
-        # active path definition
         solver.add_assumption(assums.active_path(X, Y, path_id, S))
         solver.add_contrary(assums.active_path(X, Y, path_id, S),
                             assums.contrary(assums.active_path(X, Y, path_id, S)))
-
-    @staticmethod
-    def _add_independence_rules(solver, paths: list, X: int, Y: int, S: set):
-        """All paths are NOT active, then independence"""
-        indep_body = [assums.contrary(assums.active_path(X, Y, path_id, S)) for path_id in range(len(paths))]
-        solver.add_rule(assums.indep(X, Y, S), indep_body)
 
     @staticmethod
     def _add_active_path_rules(solver, path_id: int, path_nodes: tuple, X: int, Y: int, S: set):
@@ -76,6 +67,15 @@ class ExtraABAFFactory(CoreABASPSolverFactory):
                 solver.add_rule(assums.arr(path_nodes[i+1], path_nodes[i]),
                                 [assums.active_path(X, Y, path_id, S)])
 
+    @staticmethod
+    def _add_indep_then_noe_rule(solver, X: int, Y: int, S: set):
+        """
+        If X and Y are independent given S, then there is no edge between them.
+        This is a rule that is not present in the original ABAF, but it can be useful
+        to ensure that independence assumptions lead to no edges.
+        """
+        solver.add_rule(assums.noe(X, Y), [assums.indep(X, Y, S)])
+
     def create_solver(self):
         '''
         Create ABAF with active paths and independence on top of the core factory.
@@ -86,9 +86,11 @@ class ExtraABAFFactory(CoreABASPSolverFactory):
                 from ABASPSolverFactory, which uses blocked path assumptions.
         '''
         graph = nx.complete_graph(self.n_nodes)
-        solver = self.create_core_solver({}, )
+        solver = self.create_core_solver({})
 
-        for X, Y in combinations(range(self.n_nodes), 2):
+        for X, Y in tqdm(combinations(range(self.n_nodes), 2), 
+                         total=self.n_nodes*(self.n_nodes-1) // 2, 
+                         desc="iterating through node combinations"):
             if X > Y:
                 X, Y = Y, X
 
@@ -101,6 +103,7 @@ class ExtraABAFFactory(CoreABASPSolverFactory):
             for S in powerset(set(range(self.n_nodes)) - {X, Y}):
                 # add  independence assumptions
                 self._add_indep_assumptions(solver, X, Y, S)
+                self._add_indep_then_noe_rule(solver, X, Y, S)
                 # add active path assumptions
                 for path_id, path_nodes in enumerate(paths):
                     self._add_active_path_assumptions(solver, path_id, X, Y, S)
@@ -109,11 +112,8 @@ class ExtraABAFFactory(CoreABASPSolverFactory):
                     # add dependence rules
                     self._add_dependence_rules(solver, path_id, X, Y, S)
 
-                    if self.add_reverse_rules:
-                        # add reverse independence rules
-                        self._add_reverse_independence_rules(solver, path_id, X, Y, S)
-                        # add reverse active path rules
-                        self._add_reverse_active_path_rules(solver, path_id, path_nodes, X, Y, S)
-                self._add_independence_rules(solver, paths, X, Y, S)
+                    self._add_reverse_independence_rules(solver, path_id, X, Y, S)
+                    # add reverse active path rules
+                    self._add_reverse_active_path_rules(solver, path_id, path_nodes, X, Y, S)
 
         return solver

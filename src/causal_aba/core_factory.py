@@ -127,3 +127,6 @@ class CoreABASPSolverFactory:
 
 
         return solver
+
+    def create_solver(self):
+        raise NotImplementedError("This method should be implemented in subclasses.")
