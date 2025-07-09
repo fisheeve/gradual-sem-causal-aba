@@ -10,7 +10,7 @@ from itertools import combinations
 from GradualABA.ABAF.Assumption import Assumption, Sentence
 from GradualABA.BSAF.Argument import Argument
 from GradualABA.BSAF.BSAF import BSAF
-from GradualABA.constants import DEFAULT_WEIGHT
+from src.constants import DEFAULT_WEIGHT
 from logger import logger
 from src.utils.utils import powerset
 

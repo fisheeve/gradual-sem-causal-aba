@@ -1,8 +1,11 @@
 import networkx as nx
 from tqdm import tqdm
 
+from typing import List
+from src.utils.enums import Fact, RelationEnum
 import src.causal_aba.atoms as atoms
 import src.causal_aba.assumptions as assums
+from src.gradual.abaf_builder import ABAFBuilder
 
 from src.causal_aba.core_factory import CoreABASPSolverFactory
 from src.gradual.abaf_builder import ABAFBuilder
@@ -76,7 +79,24 @@ class FactoryV1(CoreABASPSolverFactory):
         """
         solver.add_rule(assums.noe(X, Y), [assums.indep(X, Y, S)])
 
-    def create_solver(self):
+    @staticmethod
+    def _add_fact_strengths(solver: ABAFBuilder, facts: List[Fact]):
+        """
+        Add strength of facts as strengths of independence assumptions corresponding to them.
+        """
+        for fact in facts:
+            if fact.relation == RelationEnum.indep:
+                new_weight = 0.5 + 0.5*fact.score
+            elif fact.relation == RelationEnum.dep:
+                new_weight = 1 - (0.5 + 0.5*fact.score)
+            else:
+                raise ValueError(f"Unknown relation {fact.relation} for fact {fact}. "
+                                 "Expected RelationEnum.indep or RelationEnum.dep.")
+            # Update the weight of the independence assumption
+            assumption_name = assums.indep(fact.X, fact.Y, fact.S)
+            solver.update_assumption_weight(assumption_name)
+
+    def create_solver(self, facts: List[Fact]) -> ABAFBuilder:
         '''
         Create ABAF with active paths and independence on top of the core factory.
 
@@ -115,5 +135,9 @@ class FactoryV1(CoreABASPSolverFactory):
                     self._add_reverse_independence_rules(solver, path_id, X, Y, S)
                     # add reverse active path rules
                     self._add_reverse_active_path_rules(solver, path_id, path_nodes, X, Y, S)
+
+        # Add facts strengths to the solver as independence assumption weights.
+        if facts:
+            self._add_fact_strengths(solver, facts)
 
         return solver

@@ -1,7 +1,8 @@
 from GradualABA.ABAF.Assumption import Assumption
 from GradualABA.ABAF.Sentence import Sentence
 from GradualABA.ABAF.Rule import Rule
-from GradualABA.constants import DEFAULT_WEIGHT
+from typing import Dict, List
+from src.constants import DEFAULT_WEIGHT
 from src.gradual.abaf_opt import ABAFOptimised
 
 
@@ -11,7 +12,7 @@ class ABAFBuilder:
         Rule.reset_identifiers()
         Sentence.reset_identifiers()
         Assumption.reset_identifiers()
-        self.name_to_assumption = dict()
+        self.name_to_assumption: Dict[str, Assumption] = dict()
         self.name_to_sentence = dict()
         self.rules = list()
 
@@ -21,6 +22,11 @@ class ABAFBuilder:
         assumption = Assumption(assumption_name, initial_weight=initial_weight)
         self.name_to_assumption[assumption_name] = assumption
         self.name_to_sentence[assumption_name] = assumption
+
+    def update_assumption_weight(self, assumption_name: str, weight: float):
+        assert assumption_name in self.name_to_assumption, \
+            f"Assumption {assumption_name} not found in assumptions!"
+        self.name_to_assumption[assumption_name].update_weight(weight)
 
     def add_contrary(self, assumption_name, contrary_name):
         assert assumption_name in self.name_to_assumption, \

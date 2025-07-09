@@ -1,7 +1,8 @@
-from pathlib import Path
 from dataclasses import dataclass
+from typing import List
 
 from src.gradual.model_wrapper import ModelWrapper, ModelEnum
+from src.utils.enums import Fact
 from src.causal_aba.core_factory import CoreABASPSolverFactory
 
 from GradualABA.semantics.modular.SetProductAggregation import SetProductAggregation
@@ -9,22 +10,34 @@ from GradualABA.BSAF import BSAF
 
 from logger import logger
 
+
 @dataclass
 class GradualCausalABAOutput:
     arrow_strengths: dict
     indep_strengths: dict
     greedy_graph: dict
     graph_data: dict
-    bsaf: BSAF
 
 
-def run(X_s,
-        factory: CoreABASPSolverFactory,
-        model_name: ModelEnum = ModelEnum.DF_QUAD,
-        set_aggregation=SetProductAggregation(),
-        aggregation=None,
-        influence=None,
-        conservativeness: float = 1.0):
+def run_get_bsaf(factory: CoreABASPSolverFactory,
+                 facts: List[Fact],
+                 set_aggregation=SetProductAggregation()):
+    """
+    """
+    abaf_builder = factory.create_solver(facts=facts)
+    abaf = abaf_builder.get_abaf()
+    bsaf = abaf.to_bsaf(weight_agg=set_aggregation)
+
+    return bsaf
+
+
+def run_model(n_nodes: int,
+              bsaf: BSAF,
+              model_name: ModelEnum = ModelEnum.DF_QUAD,
+              set_aggregation=SetProductAggregation(),
+              aggregation=None,
+              influence=None,
+              conservativeness: float = 1.0):
     """
     Run the gradual causal ABA solver with the given parameters.
 
@@ -38,26 +51,10 @@ def run(X_s,
 
     :return: GradualCausalABAOutput containing arrow strengths, indep strengths, and greedy graph.
     """
-    if ((set_aggregation is None
-         or aggregation is None
-         or influence is None)
-            and model_name is None):
-        raise ValueError(
-            "Please provide either model_name or all three of (set_aggregation, aggregation, influence).")
-    logger.info(f"Creating solver with model_name: {model_name}, "
-                f"set_aggregation: {set_aggregation}, "
-                f"aggregation: {aggregation}, "
-                f"influence: {influence}, "
-                f"conservativeness: {conservativeness}, ")
-
-    abaf_builder = factory.create_solver()
-    abaf = abaf_builder.get_abaf()
-    bsaf = abaf.to_bsaf(weight_agg=set_aggregation)
-
     logger.info("solving BSAF with GradualCausalABA")
     model_wrapper = ModelWrapper(
         bsaf=bsaf,
-        n_nodes=X_s.shape[1],
+        n_nodes=n_nodes,
         model_name=model_name,
         set_aggregation=set_aggregation,
         aggregation=aggregation,
@@ -70,6 +67,25 @@ def run(X_s,
         arrow_strengths=model_wrapper.get_arrow_strengths(),
         indep_strengths=model_wrapper.get_indep_strengths(),
         greedy_graph=model_wrapper.build_greedy_graph(),
-        graph_data=graph_data,
-        bsaf=bsaf,
+        graph_data=graph_data
     )
+
+
+if __name__ == "__main__":
+    from src.gradual.extra.abaf_factory_v1 import FactoryV1
+
+    # Example usage
+    factory = FactoryV1(n_nodes=5)
+    facts = [Fact(node1=1,
+                  node2=2,
+                  relation=Fact.RelationEnum.dep,
+                  score=0.8,
+                  S={3, 4}),
+             Fact(node1=2,
+                  node2=3,
+                  relation=Fact.RelationEnum.indep,
+                  score=0.5,
+                  S={4})]
+    bsaf = run_get_bsaf(factory, facts)
+
+    output = run_model(n_nodes=5, bsaf=bsaf)

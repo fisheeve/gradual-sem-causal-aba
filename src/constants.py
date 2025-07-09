@@ -1,0 +1,1 @@
+DEFAULT_WEIGHT = 0.5
