@@ -90,7 +90,7 @@ class ModelWrapper:
                 BSAF=bsaf,
                 set_aggregation=SetProductAggregation(),
                 aggregation=SumAggregation() if aggregation is None else aggregation,
-                influence=QuadraticMaximumInfluence() if influence is None else influence
+                influence=QuadraticMaximumInfluence(conservativeness=conservativeness) if influence is None else influence
             )
         elif model_name == ModelEnum.DF_QUAD:
             self.model = DiscreteModular(

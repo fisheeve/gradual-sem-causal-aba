@@ -93,8 +93,8 @@ class FactoryV1(CoreABASPSolverFactory):
                 raise ValueError(f"Unknown relation {fact.relation} for fact {fact}. "
                                  "Expected RelationEnum.indep or RelationEnum.dep.")
             # Update the weight of the independence assumption
-            assumption_name = assums.indep(fact.X, fact.Y, fact.S)
-            solver.update_assumption_weight(assumption_name)
+            assumption_name = assums.indep(fact.node1, fact.node2, fact.node_set)
+            solver.update_assumption_weight(assumption_name, new_weight)
 
     def create_solver(self, facts: List[Fact]) -> ABAFBuilder:
         '''
