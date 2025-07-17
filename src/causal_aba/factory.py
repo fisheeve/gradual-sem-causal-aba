@@ -60,7 +60,7 @@ class ABASPSolverFactory(CoreABASPSolverFactory):
             # add independence fact
             solver.add_rule(assums.indep(fact.node1, fact.node2, fact.node_set), [])
 
-    def create_solver(self, facts: List[Fact]):
+    def _create_solver(self, facts: List[Fact]):
         '''
         Create ABASP solver with active/blocked path rules, 
         independence assumptions and facts.
@@ -109,4 +109,8 @@ class ABASPSolverFactory(CoreABASPSolverFactory):
 
             self._add_fact(solver, fact)
 
+        return solver, all_paths
+
+    def create_solver(self, facts: List[Fact]):
+        solver, all_paths = self._create_solver(facts)
         return solver
