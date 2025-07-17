@@ -93,10 +93,12 @@ def main():
                 'dataset_name': dataset_name,
                 'seed': seed,
                 'is_best_st_in_all_co': combined_res_dict[f'{SemanticEnum.ST.name}_best_model'] in arrow_sets_dict[SemanticEnum.CO.name],
+                'is_best_co_in_all_st': combined_res_dict[f'{SemanticEnum.CO.name}_best_model'] in arrow_sets_dict[SemanticEnum.ST.name],
                 'is_best_st_in_all_pr': combined_res_dict[f'{SemanticEnum.ST.name}_best_model'] in arrow_sets_dict[SemanticEnum.PR.name],
                 'is_best_pr_in_all_co': combined_res_dict[f'{SemanticEnum.PR.name}_best_model'] in arrow_sets_dict[SemanticEnum.CO.name],
                 'is_all_st_subset_of_all_co': arrow_sets_dict[SemanticEnum.ST.name].issubset(arrow_sets_dict[SemanticEnum.CO.name]),
                 'is_all_st_subset_of_all_pr': arrow_sets_dict[SemanticEnum.ST.name].issubset(arrow_sets_dict[SemanticEnum.PR.name]),
+                'is_all_pr_subset_of_all_st': arrow_sets_dict[SemanticEnum.PR.name].issubset(arrow_sets_dict[SemanticEnum.ST.name]),
                 'is_all_pr_subset_of_all_co': arrow_sets_dict[SemanticEnum.PR.name].issubset(arrow_sets_dict[SemanticEnum.CO.name]),
             })
 
