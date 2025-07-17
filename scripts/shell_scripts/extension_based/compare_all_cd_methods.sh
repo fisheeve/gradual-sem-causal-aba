@@ -10,10 +10,10 @@ cd $PBS_O_WORKDIR
 module load R
 export CUDA_VISIBLE_DEVICES="[]"
 
-python scripts/python_scripts/compare_st_co_pr_semantics_bnlearn.py \
+python scripts/python_scripts/extension_based/compare_all_cd_methods.py \
     --n-runs 50 \
     --sample-size 5000 \
-    --output-dir $PBS_O_WORKDIR/results_pure_aba/semantics/
+    --device 0
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to run the bnlearn experiment script."
