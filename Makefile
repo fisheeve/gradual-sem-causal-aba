@@ -33,7 +33,7 @@ install: clean
 	git clone https://github.com/briziorusso/GradualABA.git
 
 	@echo "[TODO: fix this somehow] Applying custom changes to aspforaba sub-repo..."
-	cd aspforaba && git apply ../aspforaba.diff
+	cd aspforaba && git apply ../aspforaba.patch
 
 	@echo "Installing additional dependencies..."
 	R_INTERACTIVE=FALSE R_PAPERSIZE=letter PAGER=cat R_OPTS="--no-save --no-restore --quiet" \

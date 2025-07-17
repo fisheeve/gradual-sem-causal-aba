@@ -10,12 +10,12 @@ cd $PBS_O_WORKDIR
 module load R
 export CUDA_VISIBLE_DEVICES="[]"
 
-python scripts/python_scripts/compare_all_cd_methods.py \
+python scripts/python_scripts/extension_based/compare_st_co_pr_semantics_random.py \
     --n-runs 50 \
     --sample-size 5000 \
-    --device 0
+    --output-dir $PBS_O_WORKDIR/results_pure_aba/
 
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to run the bnlearn experiment script."
+    echo "Error: Failed to run the random graph experiment script."
     exit 1
 fi
