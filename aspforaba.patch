@@ -1,0 +1,22 @@
+diff --git a/src/aspforaba/encoder.py b/src/aspforaba/encoder.py
+index a866c76..03adf8d 100644
+--- a/src/aspforaba/encoder.py
++++ b/src/aspforaba/encoder.py
+@@ -28,6 +28,7 @@ class Encoder:
+         triggered_by_in(R) :- head(R,_), supported(X) : body(R,X).
+         :- in(X), contrary(X,Y), supported(Y).
+         defeated(X) :- supported(Y), contrary(X,Y).
++        :- assumption(X), supported(X), not in(X).
+         """
+ 
+     ADMISSIBLE_ADD = """
+@@ -35,7 +36,8 @@ class Encoder:
+         derived_from_undefeated(X) :- head(R,X), triggered_by_undefeated(R).
+         triggered_by_undefeated(R) :- head(R,_), derived_from_undefeated(X) : body(R,X).
+         attacked_by_undefeated(X) :- contrary(X,Y), derived_from_undefeated(Y).
+-        :- in(X), attacked_by_undefeated(X).
++        undef_not_closed :- assumption(X), derived_from_undefeated(X), not defeated(X).
++        :- in(X), attacked_by_undefeated(X), not undef_not_closed.
+         """
+ 
+     COMPLETE_ADD = ":- out(X), not attacked_by_undefeated(X)."
