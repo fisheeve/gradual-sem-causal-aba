@@ -1,17 +1,19 @@
 from GradualABA.ABAF.Assumption import Assumption
 from GradualABA.ABAF.Sentence import Sentence
 from GradualABA.ABAF.Rule import Rule
-from typing import Dict, List
+from typing import Dict, Union
 from src.constants import DEFAULT_WEIGHT
 from src.gradual.abaf_opt import ABAFOptimised
+from GradualABA.ABAF import ABAF
 
 
 class ABAFBuilder:
 
-    def __init__(self):
+    def __init__(self, abaf_class: Union[ABAFOptimised, ABAF] = ABAFOptimised):
         Rule.reset_identifiers()
         Sentence.reset_identifiers()
         Assumption.reset_identifiers()
+        self.abaf_class = abaf_class
         self.name_to_assumption: Dict[str, Assumption] = dict()
         self.name_to_sentence = dict()
         self.rules = list()
@@ -55,7 +57,7 @@ class ABAFBuilder:
         """
         Returns the ABAF object with all assumptions, sentences, and rules.
         """
-        return ABAFOptimised(
+        return self.abaf_class(
             sentences=set(self.name_to_sentence.values()),
             assumptions=set(self.name_to_assumption.values()),
             rules=self.rules

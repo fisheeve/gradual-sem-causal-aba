@@ -6,6 +6,7 @@ import src.causal_aba.assumptions as assums
 
 from src.causal_aba.core_factory import CoreABASPSolverFactory
 from src.utils.enums import Fact, RelationEnum
+from aspforaba.src.aspforaba import ABASolver
 
 
 class ABASPSolverFactory(CoreABASPSolverFactory):
@@ -13,8 +14,8 @@ class ABASPSolverFactory(CoreABASPSolverFactory):
     Factory class for creating ABASP solvers with active/blocked path rules and independence assumptions.
     """
 
-    def __init__(self, n_nodes: int, optimise_remove_edges: bool = True):
-        super().__init__(n_nodes)
+    def __init__(self, n_nodes: int, optimise_remove_edges: bool = True, abaf_class=ABASolver):
+        super().__init__(n_nodes, abaf_class=abaf_class)
         self.optimise_remove_edges = optimise_remove_edges
 
     @staticmethod
