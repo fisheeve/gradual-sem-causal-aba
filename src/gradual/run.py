@@ -23,6 +23,7 @@ class GradualCausalABAOutput:
     indep_strengths: dict
     greedy_graph: dict
     graph_data: dict
+    has_converged_map: dict
 
 
 def run_get_bsaf_and_assum_dict(factory: CoreABASPSolverFactory,
@@ -54,7 +55,10 @@ def run_model(n_nodes: int,
               set_aggregation=SetProductAggregation(),
               aggregation=None,
               influence=None,
-              conservativeness: float = 1.0):
+              conservativeness: float = 1.0,
+              iterations: int = 10,
+              conv_epsilon: float = 1e-3,
+              conv_last_n: int = 5,) -> GradualCausalABAOutput:
     """
     Run the gradual causal ABA solver with the given parameters.
 
@@ -77,14 +81,16 @@ def run_model(n_nodes: int,
         aggregation=aggregation,
         influence=influence,
         conservativeness=conservativeness)
-    graph_data = model_wrapper.solve(iterations=10,
+    graph_data = model_wrapper.solve(iterations=iterations,
                                      verbose=True)
 
     return GradualCausalABAOutput(
         arrow_strengths=model_wrapper.get_arrow_strengths(),
         indep_strengths=model_wrapper.get_indep_strengths(),
         greedy_graph=model_wrapper.build_greedy_graph(),
-        graph_data=graph_data
+        graph_data=graph_data,
+        has_converged_map=model_wrapper.model.has_converged(epsilon=conv_epsilon,
+                                                            last_n=conv_last_n)
     )
 
 

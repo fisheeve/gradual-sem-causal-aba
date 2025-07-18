@@ -37,8 +37,8 @@ class CoreABASPSolverFactory:
         solver.add_rule(atoms.dpath(X, Y), [assums.arr(X, Y)])
         solver.add_rule(atoms.dpath(Y, X), [assums.arr(Y, X)])
 
-        solver.add_rule(assums.edge(X, Y), [assums.arr(X, Y)])
-        solver.add_rule(assums.edge(X, Y), [assums.arr(Y, X)])
+        solver.add_rule(atoms.edge(X, Y), [assums.arr(X, Y)])
+        solver.add_rule(atoms.edge(X, Y), [assums.arr(Y, X)])
 
     @staticmethod
     def _add_acyclicity_rules(solver, X, Y):

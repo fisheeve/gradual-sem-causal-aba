@@ -15,13 +15,6 @@ def noe(X, Y):
     return f"noe_{X}_{Y}"
 
 
-def edge(X, Y):
-    """WARNING: This one is not an assumption.
-       It is an atom that is the contrary of no-edge (noe) assumption.
-    """
-    return contrary(noe(X, Y))
-
-
 def indep(X, Y, S):
     # is symmetric with respect to X and Y
     if X > Y:

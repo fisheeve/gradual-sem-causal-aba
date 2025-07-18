@@ -48,3 +48,13 @@ def path(source: int, target: int, path_id: int):
     if source > target:
         source, target = target, source
     return f'path_{source}_{target}__{path_id}'
+
+
+def edge(X, Y):
+    """WARNING: This one is not an assumption.
+       It is an atom that is the contrary of no-edge (noe) assumption.
+    """
+    # edge is symmetric
+    if X > Y:
+        X, Y = Y, X
+    return f"edge_{X}_{Y}"

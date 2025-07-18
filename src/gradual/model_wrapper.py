@@ -44,8 +44,7 @@ class ModelWrapper:
                                         SetSumAggregation,
                                         SetMeanAggregation,
                                         SetProductAggregation,
-                                        SetMinAggregation,
-                                        None] = None,
+                                        SetMinAggregation] = SetProductAggregation,
                  aggregation: Union[ProductAggregation,
                                     SumAggregation,
                                     None] = None,
@@ -78,8 +77,10 @@ class ModelWrapper:
         self.arrow_strengths = None
         self.indep_strengths = None
 
-        if ((set_aggregation is None
-             or aggregation is None
+        if set_aggregation is None:
+            raise ValueError("Please provide a set aggregation method.")
+
+        if ((aggregation is None
              or influence is None)
                 and model_name is None):
             raise ValueError(
@@ -88,14 +89,14 @@ class ModelWrapper:
         if model_name == ModelEnum.QE:
             self.model = DiscreteModular(
                 BSAF=bsaf,
-                set_aggregation=SetProductAggregation(),
+                set_aggregation=set_aggregation,
                 aggregation=SumAggregation() if aggregation is None else aggregation,
                 influence=QuadraticMaximumInfluence(conservativeness=conservativeness) if influence is None else influence
             )
         elif model_name == ModelEnum.DF_QUAD:
             self.model = DiscreteModular(
                 BSAF=bsaf,
-                set_aggregation=SetProductAggregation(),
+                set_aggregation=set_aggregation,
                 aggregation=ProductAggregation() if aggregation is None else aggregation,
                 influence=LinearInfluence(conservativeness=conservativeness) if influence is None else influence
             )
@@ -215,6 +216,7 @@ class ModelWrapper:
             if not is_dag(matrix):
                 # is not accepted, moving on to next assumption
                 continue
+            accepted_assumptions.add(asm_name)
 
         greedy_matrix = get_matrix_from_arrow_set(
             get_arrows_from_assumptions(

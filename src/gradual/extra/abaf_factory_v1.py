@@ -28,7 +28,7 @@ class FactoryV1(CoreABASPSolverFactory):
     def _add_path_definition_rules(solver, paths: list, X: int, Y: int):
         for path_id, my_path in enumerate(paths):
             # path definition
-            solver.add_rule(atoms.path(X, Y, path_id), [assums.edge(my_path[i], my_path[i+1])
+            solver.add_rule(atoms.path(X, Y, path_id), [atoms.edge(my_path[i], my_path[i+1])
                                                         for i in range(len(my_path)-1)])
 
     @staticmethod

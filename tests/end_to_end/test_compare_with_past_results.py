@@ -4,6 +4,7 @@ sys.path.insert(0, 'ArgCausalDisco/')
 sys.path.insert(0, 'notears/')
 
 from pathlib import Path
+import pytest
 
 from ArgCausalDisco.utils.helpers import random_stability
 from ArgCausalDisco.abapc import ABAPC
@@ -12,9 +13,8 @@ from src.abapc import get_arrow_sets
 from src.utils.bn_utils import get_dataset
 
 
-def test_causalaba_equal_to_ABASP():
-    seed=42
-
+@pytest.mark.parametrize("seed", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+def test_causalaba_equal_to_ABASP(seed):
     data, _ = get_dataset('cancer', seed=seed)
 
     res_path = Path('./test_results')
@@ -37,4 +37,4 @@ def test_causalaba_equal_to_ABASP():
 
 
 if __name__ == "__main__":
-    test_causalaba_equal_to_ABASP()
+    test_causalaba_equal_to_ABASP(seed=42)
