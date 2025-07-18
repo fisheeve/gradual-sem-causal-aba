@@ -8,8 +8,11 @@ from src.causal_aba.core_factory import CoreABASPSolverFactory
 from GradualABA.semantics.modular.SetProductAggregation import SetProductAggregation
 from GradualABA.BSAF import BSAF
 from src.gradual.abaf_opt import ABAFOptimised
-from GradualABA.ABAF import ABAF
-from typing import Union
+from GradualABA.ABAF import ABAF, Assumption
+from typing import Union, Dict
+from GradualABA.constants import DEFAULT_WEIGHT
+import src.causal_aba.assumptions as assums
+from src.gradual.extra.abaf_factory_v1 import FactoryV1
 
 from logger import logger
 
@@ -22,16 +25,26 @@ class GradualCausalABAOutput:
     graph_data: dict
 
 
-def run_get_bsaf(factory: CoreABASPSolverFactory,
-                 facts: List[Fact],
-                 set_aggregation=SetProductAggregation(),
-                 abaf_class: Union[ABAFOptimised, ABAF] = ABAFOptimised) -> BSAF:
+def run_get_bsaf_and_assum_dict(factory: CoreABASPSolverFactory,
+                                facts: List[Fact],
+                                set_aggregation=SetProductAggregation(),
+                                abaf_class: Union[ABAFOptimised, ABAF] = ABAFOptimised) -> BSAF:
     """    Run the factory to create a BSAF with assums strengths based on the given facts.
     """
     abaf_builder = factory.create_solver(facts=facts)
     abaf = abaf_builder.get_abaf(abaf_class=abaf_class)
     bsaf = abaf.to_bsaf(weight_agg=set_aggregation)
 
+    return bsaf, abaf_builder.name_to_assumption
+
+
+def run_get_bsaf(factory: CoreABASPSolverFactory,
+                 facts: List[Fact],
+                 set_aggregation=SetProductAggregation(),
+                 abaf_class: Union[ABAFOptimised, ABAF] = ABAFOptimised) -> BSAF:
+    """    Run the factory to create a BSAF with assums strengths based on the given facts.
+    """
+    bsaf, _ = run_get_bsaf_and_assum_dict(factory, facts, set_aggregation, abaf_class)
     return bsaf
 
 
@@ -75,9 +88,31 @@ def run_model(n_nodes: int,
     )
 
 
-if __name__ == "__main__":
-    from src.gradual.extra.abaf_factory_v1 import FactoryV1
+def reset_weights(assum_dict: Dict[str, Assumption], default_weight=DEFAULT_WEIGHT):
+    """
+    Reset the weights of the assumptions in BSAF to their initial values.
+    
+    :param assum_dict: Dictionary mapping assumption names to their instances.
+    """
+    for _, assum in assum_dict.items():
+        assum.update_weight(default_weight)
 
+
+def set_weights_according_to_facts(assum_dict: Dict[str, Assumption], facts: List[Fact]):
+    """
+    Set the weights of the assumptions in BSAF according to the provided facts.
+    
+    :param bsaf: The BSAF instance whose weights are to be updated.
+    :param assum_dict: Dictionary mapping assumption names to their instances.
+    :param facts: List of facts containing the new weights for the assumptions.
+    """
+    for fact in facts:
+        assumption_name = assums.indep(fact.node1, fact.node2, fact.node_set)
+        new_weight = FactoryV1._get_indep_assum_strength(fact)
+        assum_dict[assumption_name].update_weight(new_weight)
+
+
+if __name__ == "__main__":
     # Example usage
     factory = FactoryV1(n_nodes=5)
     facts = [Fact(node1=1,
