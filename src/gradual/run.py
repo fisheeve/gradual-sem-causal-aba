@@ -7,6 +7,9 @@ from src.causal_aba.core_factory import CoreABASPSolverFactory
 
 from GradualABA.semantics.modular.SetProductAggregation import SetProductAggregation
 from GradualABA.BSAF import BSAF
+from src.gradual.abaf_opt import ABAFOptimised
+from GradualABA.ABAF import ABAF
+from typing import Union
 
 from logger import logger
 
@@ -21,11 +24,12 @@ class GradualCausalABAOutput:
 
 def run_get_bsaf(factory: CoreABASPSolverFactory,
                  facts: List[Fact],
-                 set_aggregation=SetProductAggregation()):
-    """
+                 set_aggregation=SetProductAggregation(),
+                 abaf_class: Union[ABAFOptimised, ABAF] = ABAFOptimised) -> BSAF:
+    """    Run the factory to create a BSAF with assums strengths based on the given facts.
     """
     abaf_builder = factory.create_solver(facts=facts)
-    abaf = abaf_builder.get_abaf()
+    abaf = abaf_builder.get_abaf(abaf_class=abaf_class)
     bsaf = abaf.to_bsaf(weight_agg=set_aggregation)
 
     return bsaf

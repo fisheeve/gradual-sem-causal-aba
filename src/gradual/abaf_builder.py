@@ -9,11 +9,10 @@ from GradualABA.ABAF import ABAF
 
 class ABAFBuilder:
 
-    def __init__(self, abaf_class: Union[ABAFOptimised, ABAF] = ABAFOptimised):
+    def __init__(self):
         Rule.reset_identifiers()
         Sentence.reset_identifiers()
         Assumption.reset_identifiers()
-        self.abaf_class = abaf_class
         self.name_to_assumption: Dict[str, Assumption] = dict()
         self.name_to_sentence = dict()
         self.rules = list()
@@ -53,11 +52,11 @@ class ABAFBuilder:
         rule = Rule(head=head_object, body=body_objects)
         self.rules.append(rule)
 
-    def get_abaf(self) -> ABAFOptimised:
+    def get_abaf(self, abaf_class: Union[ABAFOptimised, ABAF] = ABAFOptimised) -> Union[ABAFOptimised, ABAF]:
         """
         Returns the ABAF object with all assumptions, sentences, and rules.
         """
-        return self.abaf_class(
+        return abaf_class(
             sentences=set(self.name_to_sentence.values()),
             assumptions=set(self.name_to_assumption.values()),
             rules=self.rules

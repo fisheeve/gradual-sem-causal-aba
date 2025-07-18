@@ -7,8 +7,6 @@ sys.path.append("../../GradualABA")
 from logger import logger
 from src.gradual.run import run_get_bsaf
 from src.gradual.extra.abaf_factory_v0 import FactoryV0
-from src.utils.bn_utils import get_dataset
-from src.abapc import get_cg_and_facts
 from ArgCausalDisco.utils.helpers import random_stability
 from pathlib import Path
 import time
@@ -16,31 +14,19 @@ import pickle
 from GradualABA.ABAF import ABAF
 
 
-ALPHA = 0.01
-INDEP_TEST = 'fisherz'
-SAMPLE_SIZE = 5000
 RESULT_DIR = Path("./results/")
 RESULT_DIR.mkdir(parents=True, exist_ok=True)
 
+
 DATASET_NAME = 'cancer'
 SEED = 2025
-APPENDIX = f"{DATASET_NAME}_with_strengths"
+APPENDIX = f"{DATASET_NAME}_no_strengths"
 
 
 def main():
-    X_s, B_true = get_dataset(DATASET_NAME,
-                              seed=SEED,
-                              sample_size=SAMPLE_SIZE)
-
-    # get facts from pc
-    uc_rule = 5
-    data = X_s
-
     random_stability(SEED)
-    n_nodes = data.shape[1]
-    _, facts = get_cg_and_facts(data, alpha=ALPHA, indep_test=INDEP_TEST, uc_rule=uc_rule)
-
-    pickle.dump(facts, open(RESULT_DIR / f"facts_{APPENDIX}.pkl", "wb"))
+    n_nodes = 5
+    facts = []  # no facts so all independence assumptions get strength of 0.5 initially
 
     factory = FactoryV0(n_nodes=n_nodes)
 
