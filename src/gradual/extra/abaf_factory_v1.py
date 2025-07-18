@@ -43,25 +43,27 @@ class FactoryV1(CoreABASPSolverFactory):
                             assums.contrary(assums.active_path(X, Y, path_id, S)))
 
     @staticmethod
-    def _add_active_path_rules(solver, path_id: int, path_nodes: tuple, X: int, Y: int, S: set):
+    def _add_rule_nb_then_active_path(solver, path_id: int, path_nodes: tuple, X: int, Y: int, S: set):
         """All nodes are non-blocking, then active path"""
         non_blocking_body = [atoms.non_blocking(path_nodes[i], path_nodes[i-1], path_nodes[i+1], S)
                              for i in range(1, len(path_nodes)-1)]
         solver.add_rule(assums.active_path(X, Y, path_id, S), [atoms.path(X, Y, path_id), *non_blocking_body])
 
     @staticmethod
-    def _add_dependence_rules(solver, path_id: int, X: int, Y: int, S: set):
-        """Active path, then dependency"""
-        solver.add_rule(assums.contrary(assums.indep(X, Y, S)), [assums.active_path(X, Y, path_id, S)])
+    def _add_rule_noe_then_not_active_path_and_vice_versa(solver, path_id: int, path_nodes: tuple, X: int, Y: int, S: set):
+        """Missing edge on the path, then not active path"""
+        for i in range(0, len(path_nodes) - 1):
+            solver.add_rule(assums.contrary(assums.active_path(X, Y, path_id, S)),
+                            [assums.noe(path_nodes[i], path_nodes[i+1])])
+            # Also add the reverse rule: if active path, then noe is attacked
+            solver.add_rule(assums.contrary(assums.noe(path_nodes[i], path_nodes[i+1])),
+                            [assums.active_path(X, Y, path_id, S)])
 
     @staticmethod
-    def _add_reverse_independence_rules(solver, path_id: int, X: int, Y: int, S: set):
-        """Independence, then all paths are NOT active"""
-        solver.add_rule(assums.contrary(assums.active_path(X, Y, path_id, S)), [assums.indep(X, Y, S)])
-
-    @staticmethod
-    def _add_reverse_active_path_rules(solver, path_id: int, path_nodes: tuple, X: int, Y: int, S: set):
-        """Active path, then v-structure at nodes included in S"""
+    def _add_rule_tying_active_paths_and_v_structs(solver, path_id: int, path_nodes: tuple, X: int, Y: int, S: set):
+        """Active path, then v-structure at nodes included in S.
+          Mutual attack between active path and all other configurations that are not v-structure around the 
+          conditioned node."""
         for i in range(1, len(path_nodes) - 1):
             if path_nodes[i] in S:
                 # path_nodes[i-1] -----> path_nodes[i] <----- path_nodes[i+1]
@@ -69,6 +71,18 @@ class FactoryV1(CoreABASPSolverFactory):
                                 [assums.active_path(X, Y, path_id, S)])
                 solver.add_rule(assums.arr(path_nodes[i+1], path_nodes[i]),
                                 [assums.active_path(X, Y, path_id, S)])
+
+                # now mutual attack between active path and all other configurations
+                # active path means there can't be anything else than v-structure
+                solver.add_rule(assums.contrary(assums.arr(path_nodes[i], path_nodes[i-1])),
+                                [assums.active_path(X, Y, path_id, S)])
+                solver.add_rule(assums.contrary(assums.arr(path_nodes[i], path_nodes[i+1])),
+                                [assums.active_path(X, Y, path_id, S)])
+                # non collider structures imply contrary of active path
+                solver.add_rule(assums.contrary(assums.active_path(X, Y, path_id, S)),
+                                [assums.arr(path_nodes[i], path_nodes[i-1])])
+                solver.add_rule(assums.contrary(assums.active_path(X, Y, path_id, S)),
+                                [assums.arr(path_nodes[i], path_nodes[i+1])])
 
     @staticmethod
     def _add_indep_then_noe_rule(solver, X: int, Y: int, S: set):
@@ -80,20 +94,36 @@ class FactoryV1(CoreABASPSolverFactory):
         solver.add_rule(assums.noe(X, Y), [assums.indep(X, Y, S)])
 
     @staticmethod
+    def _add_rules_tying_independence_and_active_paths(solver, path_id: int, X: int, Y: int, S: set):
+        """Active path, then dependency"""
+        solver.add_rule(assums.contrary(assums.indep(X, Y, S)), [assums.active_path(X, Y, path_id, S)])
+        solver.add_rule(assums.contrary(assums.active_path(X, Y, path_id, S)), [assums.indep(X, Y, S)])
+
+    @staticmethod
+    def _get_indep_assum_strength(fact: Fact) -> float:
+        """
+        Get the strength of the assumption based on the fact.
+         Strengths of independence assumptions are assigned as follows:
+         0.5 if nothing is known about the independence assumption
+         0.5 + 0.5 * fact_score if we have an independence fact
+         1 - (0.5 + 0.5 * fact_score) if we have a dependency fact
+        """
+        if fact.relation == RelationEnum.indep:
+            return 0.5 + 0.5 * fact.score
+        elif fact.relation == RelationEnum.dep:
+            return 1 - (0.5 + 0.5 * fact.score)
+        else:
+            raise ValueError(f"Unknown relation type: {fact.relation}")
+
+    @staticmethod
     def _add_fact_strengths(solver: ABAFBuilder, facts: List[Fact]):
         """
         Add strength of facts as strengths of independence assumptions corresponding to them.
         """
         for fact in facts:
-            if fact.relation == RelationEnum.indep:
-                new_weight = 0.5 + 0.5*fact.score
-            elif fact.relation == RelationEnum.dep:
-                new_weight = 1 - (0.5 + 0.5*fact.score)
-            else:
-                raise ValueError(f"Unknown relation {fact.relation} for fact {fact}. "
-                                 "Expected RelationEnum.indep or RelationEnum.dep.")
             # Update the weight of the independence assumption
             assumption_name = assums.indep(fact.node1, fact.node2, fact.node_set)
+            new_weight = FactoryV1._get_indep_assum_strength(fact)
             solver.update_assumption_weight(assumption_name, new_weight)
 
     def create_solver(self, facts: List[Fact]) -> ABAFBuilder:
@@ -108,8 +138,8 @@ class FactoryV1(CoreABASPSolverFactory):
         graph = nx.complete_graph(self.n_nodes)
         solver = self.create_core_solver({})
 
-        for X, Y in tqdm(combinations(range(self.n_nodes), 2), 
-                         total=self.n_nodes*(self.n_nodes-1) // 2, 
+        for X, Y in tqdm(combinations(range(self.n_nodes), 2),
+                         total=self.n_nodes*(self.n_nodes-1) // 2,
                          desc="iterating through node combinations"):
             if X > Y:
                 X, Y = Y, X
@@ -128,13 +158,11 @@ class FactoryV1(CoreABASPSolverFactory):
                 for path_id, path_nodes in enumerate(paths):
                     self._add_active_path_assumptions(solver, path_id, X, Y, S)
                     # add active path rules
-                    self._add_active_path_rules(solver, path_id, path_nodes, X, Y, S)
-                    # add dependence rules
-                    self._add_dependence_rules(solver, path_id, X, Y, S)
-
-                    self._add_reverse_independence_rules(solver, path_id, X, Y, S)
-                    # add reverse active path rules
-                    self._add_reverse_active_path_rules(solver, path_id, path_nodes, X, Y, S)
+                    self._add_rule_nb_then_active_path(solver, path_id, path_nodes, X, Y, S)
+                    self._add_rule_noe_then_not_active_path_and_vice_versa(solver, path_id, path_nodes, X, Y, S)
+                    self._add_rule_tying_active_paths_and_v_structs(solver, path_id, path_nodes, X, Y, S)
+                    # add independence rules
+                    self._add_rules_tying_independence_and_active_paths(solver, path_id, X, Y, S)
 
         # Add facts strengths to the solver as independence assumption weights.
         if facts:
