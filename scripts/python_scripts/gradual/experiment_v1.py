@@ -117,8 +117,8 @@ def get_metrics(W_est, B_true):
 def main(n_runs):
     facts_path = Path('./facts')
     facts_path.mkdir(parents=True, exist_ok=True)
-    cpdag_metrics_df = None
-    dag_metrics_df = None
+    cpdag_metrics_df = pd.DataFrame()
+    dag_metrics_df = pd.DataFrame()
 
     for dataset in DATASETS:
         logger.info(f"Running experiment for dataset: {dataset}")
@@ -237,16 +237,12 @@ def main(n_runs):
                     mt_dag.update(add_info)
 
                     # append to dataframes
-                    if cpdag_metrics_df is None:
-                        cpdag_metrics_df = pd.DataFrame([mt_cpdag])
-                        dag_metrics_df = pd.DataFrame([mt_dag])
-                    else:
-                        cpdag_metrics_df = pd.concat([cpdag_metrics_df, 
-                                                      pd.DataFrame([mt_cpdag], columns=mt_cpdag.keys())], 
-                                                      ignore_index=True)
-                        dag_metrics_df = pd.concat([dag_metrics_df, 
-                                                    pd.DataFrame([mt_dag], columns=mt_cpdag.keys())], 
+                    cpdag_metrics_df = pd.concat([cpdag_metrics_df, 
+                                                    pd.DataFrame([mt_cpdag])], 
                                                     ignore_index=True)
+                    dag_metrics_df = pd.concat([dag_metrics_df, 
+                                                pd.DataFrame([mt_dag])], 
+                                                ignore_index=True)
 
                     # save to csv
                     cpdag_metrics_df.to_csv(RESULT_DIR / f'cpdag_metrics.csv', index=False)

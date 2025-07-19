@@ -88,20 +88,18 @@ def get_metrics(W_est, B_true):
 
     return mt_cpdag, mt_dag
 
-def is_dag_from_arrows(model: List[Tuple]) -> bool:
+def is_dag_from_arrows(model: List[Tuple], n_nodes: int) -> bool:
     """
     Check if the model represented by tuples of nodes as arrows is a Directed Acyclic Graph (DAG).
     """
-    return is_dag(get_matrix_from_arrow_set(model))
+    return is_dag(get_matrix_from_arrow_set(model, n_nodes))
 
 
 def main(n_runs, steps_ahead):
     facts_path = Path('./facts')
     facts_path.mkdir(parents=True, exist_ok=True)
-    cpdag_metrics_df = None
-    dag_metrics_df = None
-
-    
+    cpdag_metrics_df = pd.DataFrame()
+    dag_metrics_df = pd.DataFrame()
 
     for dataset in DATASETS:
         logger.info(f"Running experiment for dataset: {dataset}")
@@ -109,7 +107,7 @@ def main(n_runs, steps_ahead):
         random_stability(SEED)
         seeds_list = np.random.randint(0, 10000, (n_runs,)).tolist()
         n_nodes = N_NODES[dataset]
-
+        is_dag_prefilled = partial(is_dag_from_arrows, n_nodes=n_nodes)
 
         # create bsaf
         start_bsaf_creation = time.time()
@@ -165,7 +163,7 @@ def main(n_runs, steps_ahead):
             original_ranking_I, best_model_original_ranking = limited_depth_search_best_model(
                 steps_ahead=steps_ahead,
                 sorted_arrows=sorted_arrows,
-                is_dag=is_dag_from_arrows,
+                is_dag=is_dag_prefilled,
                 get_score=score_original_prefilled
             )
             elapsed_orig_ranking = time.time() - start_orig_ranking
@@ -174,7 +172,7 @@ def main(n_runs, steps_ahead):
             refined_ranking_I, best_model_refined_ranking = limited_depth_search_best_model(
                 steps_ahead=steps_ahead,
                 sorted_arrows=sorted_arrows,
-                is_dag=is_dag_from_arrows,
+                is_dag=is_dag_prefilled,
                 get_score=score_refined_prefilled
             )
             elapsed_refined_ranking = time.time() - start_refined_ranking
@@ -211,16 +209,12 @@ def main(n_runs, steps_ahead):
                 mt_dag.update(add_info)
 
                 # append to dataframes
-                if cpdag_metrics_df is None:
-                    cpdag_metrics_df = pd.DataFrame([mt_cpdag])
-                    dag_metrics_df = pd.DataFrame([mt_dag])
-                else:
-                    cpdag_metrics_df = pd.concat([cpdag_metrics_df, 
-                                                    pd.DataFrame([mt_cpdag], columns=mt_cpdag.keys())], 
-                                                    ignore_index=True)
-                    dag_metrics_df = pd.concat([dag_metrics_df, 
-                                                pd.DataFrame([mt_dag], columns=mt_cpdag.keys())], 
+                cpdag_metrics_df = pd.concat([cpdag_metrics_df, 
+                                                pd.DataFrame([mt_cpdag])], 
                                                 ignore_index=True)
+                dag_metrics_df = pd.concat([dag_metrics_df, 
+                                            pd.DataFrame([mt_dag])], 
+                                            ignore_index=True)
 
                 # save to csv
                 cpdag_metrics_df.to_csv(RESULT_DIR / f'cpdag_metrics.csv', index=False)
