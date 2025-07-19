@@ -1,7 +1,9 @@
 from itertools import combinations
 from tqdm import tqdm
 import networkx as nx
+import time
 import pandas as pd
+import numpy as np
 
 from ArgCausalDisco.utils.helpers import random_stability
 from ArgCausalDisco.cd_algorithms.PC import pc
@@ -12,6 +14,7 @@ from src.utils.enums import Fact, RelationEnum
 from src.causal_aba.factory import ABASPSolverFactory
 from src.utils.enums import SemanticEnum
 import src.causal_aba.assumptions as assums
+from dataclasses import dataclass
 
 from logger import logger
 
@@ -173,7 +176,7 @@ def get_best_model_by_refined_indep_facts(models, indep_to_strength, n_nodes, cg
     return best_model, best_B_est, best_I
 
 
-def get_best_model_by_arrows(models, arr_strength, n_nodes):
+def get_best_model_by_arrows_sum(models, arr_strength, n_nodes):
     if len(models) > 50000:
         logger.info("Pick the first 50,000 models for I calculation")
         models = set(list(models)[:50000])  # Limit the number of models to 30,000
@@ -192,3 +195,106 @@ def get_best_model_by_arrows(models, arr_strength, n_nodes):
         logger.info(f"DAG from d-ABA: {best_B_est}")
     best_B_est = get_matrix_from_arrow_set(best_model, n_nodes)
     return best_model, best_B_est, best_I
+
+
+def get_best_model_by_arrows_mean(models, arr_strength, n_nodes):
+    if len(models) > 50000:
+        logger.info("Pick the first 50,000 models for I calculation")
+        models = set(list(models)[:50000])  # Limit the number of models to 30,000
+
+    best_model = None
+    best_I = None
+    best_B_est = None
+    for n, model in tqdm(enumerate(models), desc="Models from ABAPC"):
+        est_I = 0
+        num_arrows = 0
+        for x, y in model:
+            est_I += arr_strength.get(assums.arr(x, y), 0)
+            num_arrows += 1
+        est_I = est_I / num_arrows if num_arrows > 0 else 0
+
+        if best_model is None or best_I < est_I:
+            best_model = model
+            best_I = est_I
+        logger.info(f"DAG from d-ABA: {best_B_est}")
+    best_B_est = get_matrix_from_arrow_set(best_model, n_nodes)
+    return best_model, best_B_est, best_I
+
+
+@dataclass
+class BestModel:
+    best_model: frozenset  # frozenset of tuples (node1, node2)
+    best_B_est: np.ndarray  # numpy array of shape (n_nodes, n_nodes)
+    best_I: float  # float, best strength
+    elapsed: float  # time taken to rank the models
+
+
+@dataclass
+class BestModelCollection:
+    original: BestModel
+    refined_indep_facts: BestModel
+    arrows_sum: BestModel
+    arrows_mean: BestModel
+
+
+def get_best_model_various_valuations(models, n_nodes, cg, alpha, indep_to_strength, arr_strength):
+    """ Get the best model from the set of models based on various valuations.
+    Args:
+        models: list of models, where each model is a frozenset of node pair tuples 
+        representing arrows in the causal graph
+        n_nodes: int, number of nodes in the causal graph
+        cg: causal graph object
+        alpha: float, significance level for independence tests
+        indep_to_strength: dict, mapping from independence facts to their strengths
+        arr_strength: dict, mapping from arrow sets to their strengths
+    Returns:
+        best_model: the best model based on the valuation criteria
+    """
+    start = time.time()
+    best_model, best_B_est, best_I = get_best_model(
+        models, n_nodes, cg, alpha=alpha)
+    elapsed = time.time() - start
+    original_best_model = BestModel(
+        best_model=frozenset(best_model),
+        best_B_est=best_B_est,
+        best_I=best_I,
+        elapsed=elapsed
+    )
+
+    start = time.time()
+    best_model, best_B_est, best_I = get_best_model_by_refined_indep_facts(
+        models, indep_to_strength, n_nodes, cg, alpha=alpha)
+    elapsed = time.time() - start
+    refined_indep_facts_best_model = BestModel(
+        best_model=frozenset(best_model),
+        best_B_est=best_B_est,
+        best_I=best_I,
+        elapsed=elapsed
+    )
+
+    start = time.time()
+    best_model, best_B_est, best_I = get_best_model_by_arrows_sum(models, arr_strength, n_nodes)
+    elapsed = time.time() - start
+    arrows_sum_best_model = BestModel(
+        best_model=frozenset(best_model),
+        best_B_est=best_B_est,
+        best_I=best_I,
+        elapsed=elapsed
+    )
+
+    start = time.time()
+    best_model, best_B_est, best_I = get_best_model_by_arrows_mean(models, arr_strength, n_nodes)
+    elapsed = time.time() - start
+    arrows_mean_best_model = BestModel(
+        best_model=frozenset(best_model),
+        best_B_est=best_B_est,
+        best_I=best_I,
+        elapsed=elapsed
+    )
+
+    return BestModelCollection(
+        original=original_best_model,
+        refined_indep_facts=refined_indep_facts_best_model,
+        arrows_sum=arrows_sum_best_model,
+        arrows_mean=arrows_mean_best_model
+    )

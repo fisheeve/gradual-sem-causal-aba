@@ -30,3 +30,34 @@ def facts_from_file(filename):
         for line in f:
             facts.append(parse_fact_line(line))
     return facts
+
+
+def generate_fact_tuple(fact):
+    X, Y, S, dep_type_PC, I = fact.node1, fact.node2, fact.node_set, fact.relation.value, fact.score
+    s_str = 'empty' if len(S)==0 else 's'+'y'.join([str(i) for i in S])
+    return(X,S,Y,dep_type_PC, f"{dep_type_PC}({X},{Y},{s_str}).", I)
+
+
+def get_fact_location(facts, base_location='./facts.lp'):
+
+    facts_location = base_location
+    facts_location_wc = base_location.replace('.lp', '_wc.lp')
+    facts_location_I = base_location.replace('.lp', '_I.lp')
+
+    facts = [generate_fact_tuple(fact) for fact in facts]
+
+
+    ### Save external statements
+    with open(facts_location, "w") as f:
+        for n, s in enumerate(facts):
+            f.write(f"#external ext_{s[4]}\n")
+    ### Save weak constraints
+    with open(facts_location_wc, "w") as f:
+        for n, s in enumerate(facts):
+            f.write(f":~ {s[4]} [-{int(s[5]*1000)}]\n")
+    ### Save inner strengths
+    with open(facts_location_I, "w") as f:
+        for n, s in enumerate(facts):
+            f.write(f"{s[4]} I={s[5]}, NA\n")
+        
+    return facts_location
