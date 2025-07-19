@@ -38,6 +38,7 @@ from src.gradual.semantic_modules.TopDiffAggregation import TopDiffAggregation
 from src.utils.bn_utils import get_dataset
 from src.utils.enums import Fact, RelationEnum
 from src.utils.fact_utils import get_fact_location
+from src.utils.configure_r import configure_r
 from ArgCausalDisco.causalaba import CausalABA
 from ArgCausalDisco.utils.graph_utils import DAGMetrics, dag2cpdag, set_of_models_to_set_of_graphs
 from ArgCausalDisco.utils.helpers import random_stability
@@ -45,6 +46,7 @@ from GradualABA.semantics.modular.LinearInfluence import LinearInfluence
 from GradualABA.semantics.modular.SetMinAggregation import SetMinAggregation
 
 
+configure_r()
 
 ALPHA = 0.01
 INDEP_TEST = 'fisherz'
@@ -65,7 +67,7 @@ SEED = 2024
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run gradual ABA experiment v1")
-    parser.add_argument('--n_runs', type=int, default=50, help='Number of runs for each dataset')
+    parser.add_argument('--n-runs', type=int, default=50, help='Number of runs for each dataset')
     return parser.parse_args()
 
 
@@ -119,8 +121,8 @@ def get_metrics(W_est, B_true):
 def main(n_runs):
     facts_path = Path('./facts')
     facts_path.mkdir(parents=True, exist_ok=True)
-    cpdag_metrics_df = pd.DataFrame()
-    dag_metrics_df = pd.DataFrame()
+    cpdag_metrics_df = None
+    dag_metrics_df = None
 
     for dataset in DATASETS:
         logger.info(f"Running experiment for dataset: {dataset}")
@@ -217,10 +219,10 @@ def main(n_runs):
                 (refined_indep_best_model_collection, 'refined_indep_facts', elapsed_refined_causal_aba)
             ]:
                 for model_ranking_method, best_model_object in asdict(model_collection).items():
-                    best_model = best_model_object.best_model
-                    best_B_est = best_model_object.best_B_est
-                    best_I = best_model_object.best_I
-                    ranking_elapsed = best_model_object.elapsed
+                    best_model = best_model_object['best_model']
+                    best_B_est = best_model_object['best_B_est']
+                    best_I = best_model_object['best_I']
+                    ranking_elapsed = best_model_object['elapsed']
 
                     # get metrics
                     mt_cpdag, mt_dag = get_metrics(best_B_est, B_true)
@@ -231,8 +233,7 @@ def main(n_runs):
                         'model_ranking_method': model_ranking_method,
                         'aba_elapsed': aba_elaplsed,
                         'ranking_elapsed': ranking_elapsed,
-                        best_I: best_I,
-                        best_model: frozenset(best_model),
+                        'best_I': best_I,
                     }
 
                     # add base info
@@ -240,8 +241,16 @@ def main(n_runs):
                     mt_dag.update(add_info)
 
                     # append to dataframes
-                    cpdag_metrics_df = pd.concat([cpdag_metrics_df, pd.DataFrame([mt_cpdag])], ignore_index=True)
-                    dag_metrics_df = pd.concat([dag_metrics_df, pd.DataFrame([mt_dag])], ignore_index=True)
+                    if cpdag_metrics_df is None:
+                        cpdag_metrics_df = pd.DataFrame([mt_cpdag])
+                        dag_metrics_df = pd.DataFrame([mt_dag])
+                    else:
+                        cpdag_metrics_df = pd.concat([cpdag_metrics_df, 
+                                                      pd.DataFrame([mt_cpdag], columns=mt_cpdag.keys())], 
+                                                      ignore_index=True)
+                        dag_metrics_df = pd.concat([dag_metrics_df, 
+                                                    pd.DataFrame([mt_dag], columns=mt_cpdag.keys())], 
+                                                    ignore_index=True)
 
                     # save to csv
                     cpdag_metrics_df.to_csv(RESULT_DIR / f'cpdag_metrics.csv', index=False)
