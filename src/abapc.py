@@ -11,6 +11,7 @@ from src.utils.utils import get_arrows_from_model, get_matrix_from_arrow_set
 from src.utils.enums import Fact, RelationEnum
 from src.causal_aba.factory import ABASPSolverFactory
 from src.utils.enums import SemanticEnum
+import src.causal_aba.assumptions as assums
 
 from logger import logger
 
@@ -137,4 +138,57 @@ def get_best_model(models, n_nodes, cg, alpha=0.01):
             best_I = est_I
             best_B_est = B_est
         logger.info(f"DAG from d-ABA: {best_B_est}")
+    return best_model, best_B_est, best_I
+
+
+def get_best_model_by_refined_indep_facts(models, indep_to_strength, n_nodes, cg, alpha=0.01):
+    if len(models) > 50000:
+        logger.info("Pick the first 50,000 models for I calculation")
+        models = set(list(models)[:50000])  # Limit the number of models to 30,000
+
+    best_model = None
+    best_I = None
+    best_B_est = None
+    for n, model in tqdm(enumerate(models), desc="Models from ABAPC"):
+        # derive B_est from the model
+        B_est = get_matrix_from_arrow_set(model, n_nodes)
+        G_est = nx.DiGraph(pd.DataFrame(B_est, columns=[f"X{i+1}" for i in range(B_est.shape[1])], index=[f"X{i+1}" for i in range(B_est.shape[1])]))
+        est_I = 0
+        for x, y in combinations(range(n_nodes), 2):
+            I_from_data = list(set(cg.sepset[x, y]))
+            for s, p in I_from_data:
+                PC_dep_type_is_indep = p > alpha
+                if PC_dep_type_is_indep:
+                    s_text = [f"X{r+1}" for r in s]
+                    is_d_separated = nx.algorithms.d_separated(G_est, {f"X{x+1}"}, {f"X{y+1}"}, set(s_text))
+                    if is_d_separated:
+                        I = indep_to_strength.get(assums.indep(x, y, s), 0)
+                        est_I += I
+
+        if best_model is None or best_I < est_I:
+            best_model = model
+            best_I = est_I
+            best_B_est = B_est
+        logger.info(f"DAG from d-ABA: {best_B_est}")
+    return best_model, best_B_est, best_I
+
+
+def get_best_model_by_arrows(models, arr_strength, n_nodes):
+    if len(models) > 50000:
+        logger.info("Pick the first 50,000 models for I calculation")
+        models = set(list(models)[:50000])  # Limit the number of models to 30,000
+
+    best_model = None
+    best_I = None
+    best_B_est = None
+    for n, model in tqdm(enumerate(models), desc="Models from ABAPC"):
+        est_I = 0
+        for x, y in model:
+            est_I += arr_strength.get(assums.arr(x, y), 0)
+
+        if best_model is None or best_I < est_I:
+            best_model = model
+            best_I = est_I
+        logger.info(f"DAG from d-ABA: {best_B_est}")
+    best_B_est = get_matrix_from_arrow_set(best_model, n_nodes)
     return best_model, best_B_est, best_I
