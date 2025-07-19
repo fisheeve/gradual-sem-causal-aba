@@ -229,6 +229,8 @@ def main(n_runs):
                         'model_ranking_method': model_ranking_method,
                         'aba_elapsed': aba_elaplsed,
                         'ranking_elapsed': ranking_elapsed,
+                        'num_edges_est': len(best_model),
+                        'best_model': best_model,
                         'best_I': best_I,
                     }
 

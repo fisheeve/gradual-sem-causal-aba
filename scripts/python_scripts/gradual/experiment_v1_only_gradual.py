@@ -199,6 +199,8 @@ def main(n_runs, steps_ahead):
                     **base_info,
                     'fact_ranking_method': 'stand_alone_gradual',
                     'model_ranking_method': method,
+                    'num_edges_est': len(best_model),
+                    'best_model': best_model,
                     'aba_elapsed': 0, # No ABA elapsed time in this context
                     'ranking_elapsed': elapsed,
                     'best_I': best_I,
