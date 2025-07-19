@@ -112,6 +112,26 @@ def get_arrow_sets(data,
     return arrow_sets, cg, num_facts, facts
 
 
+def score_model_original(model, n_nodes, cg, alpha=0.01, return_only_I=False):
+    B_est = get_matrix_from_arrow_set(model, n_nodes)
+    G_est = nx.DiGraph(pd.DataFrame(B_est, columns=[f"X{i+1}" for i in range(B_est.shape[1])], index=[f"X{i+1}" for i in range(B_est.shape[1])]))
+    est_I = 0
+    for x, y in combinations(range(n_nodes), 2):
+        I_from_data = list(set(cg.sepset[x, y]))
+        for s, p in I_from_data:
+            PC_dep_type = 'indep' if p > alpha else 'dep'
+            s_text = [f"X{r+1}" for r in s]
+            dep_type = 'indep' if nx.algorithms.d_separated(G_est, {f"X{x+1}"}, {f"X{y+1}"}, set(s_text)) else 'dep'
+            I = initial_strength(p, len(s), alpha, 0.5, n_nodes)
+            if dep_type != PC_dep_type:
+                est_I += -I
+            else:
+                est_I += I
+    if return_only_I:
+        return est_I
+        
+    return est_I, B_est
+
 def get_best_model(models, n_nodes, cg, alpha=0.01):
     if len(models) > 50000:
         logger.info("Pick the first 50,000 models for I calculation")
@@ -122,20 +142,7 @@ def get_best_model(models, n_nodes, cg, alpha=0.01):
     best_B_est = None
     for n, model in tqdm(enumerate(models), desc="Models from ABAPC"):
         # derive B_est from the model
-        B_est = get_matrix_from_arrow_set(model, n_nodes)
-        G_est = nx.DiGraph(pd.DataFrame(B_est, columns=[f"X{i+1}" for i in range(B_est.shape[1])], index=[f"X{i+1}" for i in range(B_est.shape[1])]))
-        est_I = 0
-        for x, y in combinations(range(n_nodes), 2):
-            I_from_data = list(set(cg.sepset[x, y]))
-            for s, p in I_from_data:
-                PC_dep_type = 'indep' if p > alpha else 'dep'
-                s_text = [f"X{r+1}" for r in s]
-                dep_type = 'indep' if nx.algorithms.d_separated(G_est, {f"X{x+1}"}, {f"X{y+1}"}, set(s_text)) else 'dep'
-                I = initial_strength(p, len(s), alpha, 0.5, n_nodes)
-                if dep_type != PC_dep_type:
-                    est_I += -I
-                else:
-                    est_I += I
+        est_I, B_est = score_model_original(model, n_nodes, cg, alpha=alpha)
         if best_model is None or best_I < est_I:
             best_model = model
             best_I = est_I
@@ -144,16 +151,8 @@ def get_best_model(models, n_nodes, cg, alpha=0.01):
     return best_model, best_B_est, best_I
 
 
-def get_best_model_by_refined_indep_facts(models, indep_to_strength, n_nodes, cg, alpha=0.01):
-    if len(models) > 50000:
-        logger.info("Pick the first 50,000 models for I calculation")
-        models = set(list(models)[:50000])  # Limit the number of models to 30,000
-
-    best_model = None
-    best_I = None
-    best_B_est = None
-    for n, model in tqdm(enumerate(models), desc="Models from ABAPC"):
-        # derive B_est from the model
+def score_model_by_refined_indep_facts(model, indep_to_strength, n_nodes, cg, alpha=0.01, return_only_I=False):
+    # derive B_est from the model
         B_est = get_matrix_from_arrow_set(model, n_nodes)
         G_est = nx.DiGraph(pd.DataFrame(B_est, columns=[f"X{i+1}" for i in range(B_est.shape[1])], index=[f"X{i+1}" for i in range(B_est.shape[1])]))
         est_I = 0
@@ -167,6 +166,21 @@ def get_best_model_by_refined_indep_facts(models, indep_to_strength, n_nodes, cg
                     if is_d_separated:
                         I = indep_to_strength.get(assums.indep(x, y, s), 0)
                         est_I += I
+        if return_only_I:
+            return est_I
+        return est_I, B_est
+
+def get_best_model_by_refined_indep_facts(models, indep_to_strength, n_nodes, cg, alpha=0.01):
+    if len(models) > 50000:
+        logger.info("Pick the first 50,000 models for I calculation")
+        models = set(list(models)[:50000])  # Limit the number of models to 30,000
+
+    best_model = None
+    best_I = None
+    best_B_est = None
+    for n, model in tqdm(enumerate(models), desc="Models from ABAPC"):
+        # derive B_est from the model
+        est_I, B_est = score_model_by_refined_indep_facts(model, indep_to_strength, n_nodes, cg, alpha=alpha)
 
         if best_model is None or best_I < est_I:
             best_model = model

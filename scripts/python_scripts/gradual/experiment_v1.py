@@ -6,13 +6,9 @@
 2. Experiment providing these indep fact strengths to rank initial facts as well
     - Only consider independence facts tho
 
-6 experiments to accomplish the above
-
-----
-3. Experiment with greedy graph construction. Construct greedily, beam search k steps in arrows, 
-greedy regarding valuation. try two valuations: original, corresponding to refined strengths.
-Arrow valuation does not make sense, would just get max number of arrows.
+6 methods to accomplish the above
 '''
+
 import sys
 sys.path.insert(0, 'aspforaba/')
 sys.path.insert(0, 'GradualABA/')

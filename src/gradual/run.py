@@ -21,7 +21,6 @@ from logger import logger
 class GradualCausalABAOutput:
     arrow_strengths: dict
     indep_strengths: dict
-    greedy_graph: dict
     graph_data: dict
     has_converged_map: dict
 
@@ -70,7 +69,7 @@ def run_model(n_nodes: int,
     :param influence: Influence method to use.
     :param conservativeness: Conservativeness factor for the model.
 
-    :return: GradualCausalABAOutput containing arrow strengths, indep strengths, and greedy graph.
+    :return: GradualCausalABAOutput containing arrow strengths, indep strengths.
     """
     logger.info("solving BSAF with GradualCausalABA")
     model_wrapper = ModelWrapper(
@@ -87,7 +86,6 @@ def run_model(n_nodes: int,
     return GradualCausalABAOutput(
         arrow_strengths=model_wrapper.get_arrow_strengths(),
         indep_strengths=model_wrapper.get_indep_strengths(),
-        greedy_graph=model_wrapper.build_greedy_graph(),
         graph_data=graph_data,
         has_converged_map=model_wrapper.model.has_converged(epsilon=conv_epsilon,
                                                             last_n=conv_last_n)
