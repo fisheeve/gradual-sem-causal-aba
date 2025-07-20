@@ -26,6 +26,10 @@ def active_path(path_nodes: Tuple, S: set):
     return f"active_path_" + '_'.join([str(i) for i in path_nodes]) + "__" + '_'.join([str(i) for i in S])
 
 
+def is_contrary(sentence: Sentence):
+    return sentence.name.startswith('-')
+
+
 def get_reindex_map(n_nodes, node1: int, node2: int, new_node1: int, new_node2: int) -> Dict[int, int]:
     """Swap node1 and node2 with new_node1 and new_node2 in the given node.
      Provides a deterministic reindexing of nodes in the solution.
@@ -58,6 +62,7 @@ class BSAFBuilderV2:
         # Maps names to Sentence objects
         # Sentences can be assumptions or assumption contrary literals
         self.name_to_sentence: Dict[str, Sentence] = dict()
+        self.contrary_to_assumption: Dict[Sentence, Assumption] = dict()
 
         # Longest cycle can be of size n_nodes, so we set reasonable limit
         self.max_cycle_size = min(max_cycle_size, n_nodes)
@@ -67,6 +72,15 @@ class BSAFBuilderV2:
         self.max_path_length = min(max_path_length, n_nodes-1)
         # At most n_nodes-2 conditioning variables
         self.max_conditioning_set_size = min(max_conditioning_set_size, n_nodes-2)
+    
+    def _get_assumption_from_contrary(self, sentence: Sentence):
+        try:
+            assumption_name = sentence.name[1:]  # remove the leading -
+            assumption = self.name_to_assumption[assumption_name]
+            return assumption
+        except KeyError as e:
+            logger.error(f"Error finding assumption of contrary {sentence}.")
+            raise ValueError(f"Error finding assumption of contrary {sentence}.")
 
     def _add_assumption(self, name: str, initial_weight: float):
         if name not in self.name_to_assumption:
@@ -392,8 +406,14 @@ class BSAFBuilderV2:
 
         # Create BSAF with the assumptions and arguments
         self.bsaf = BSAF(assumptions=set(self.name_to_assumption.values()),
-                         arguments=self.arguments)
-
+                         arguments=set())
+        for argument in self.arguments:
+            self.bsaf.arguments.add(argument)
+            if is_contrary(argument.claim):  # add attack
+                assumption = self._get_assumption_from_contrary(argument.claim)
+                self.bsaf.attacks[assumption].add(frozenset(argument.premise))
+            else:  # add support
+                self.bsaf.supports[argument.claim].add(frozenset(argument.premise))
         return self.bsaf
 
 
