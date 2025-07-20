@@ -9,6 +9,7 @@ from GradualABA.BSAF.Argument import Argument
 from GradualABA.ABAF.Rule import Rule
 from GradualABA.BSAF.BSAF import BSAF
 from itertools import combinations, permutations
+from tqdm import tqdm
 
 from logger import logger
 
@@ -89,7 +90,9 @@ class BSAFBuilderV2:
         """Add arrow and no-edge assumptions for all pairs of nodes.
         Also add mutual exclusion arguments for arrows and no-edge assumptions for each pair of nodes.
         """
-        for node1, node2 in combinations(range(self.n_nodes), 2):
+        for node1, node2 in tqdm(combinations(range(self.n_nodes), 2), 
+                                 desc="Adding arrow and no-edge assumptions",
+                                 total=self.n_nodes * (self.n_nodes - 1) // 2):
             # Add arrow assumptions
             self._add_assumption(asm.arr(node1, node2), initial_weight=self.default_weight)
             self._add_assumption(asm.arr(node2, node1), initial_weight=self.default_weight)
@@ -114,7 +117,9 @@ class BSAFBuilderV2:
         # get all unique arrangements of nodes of size cycle-size
         # to get arrangements, first get all combinations, then consdider all permutations
         # each arrangement is considered a cycle, attaks arrow that goes from last node to first node
-        for cycle_size in range(3, self.max_cycle_size + 1):
+        for cycle_size in tqdm(range(3, self.max_cycle_size + 1),
+                               desc="Adding cycle arguments",
+                               total=self.max_cycle_size - 2):
             for perm in permutations(range(self.n_nodes), cycle_size):
                 # Generate all permutations corresponding to all possible cycles
                 self._add_argument(claim=asm.contrary(asm.arr(perm[-1], perm[0])),
@@ -129,7 +134,9 @@ class BSAFBuilderV2:
             logger.error("Max conditioning set size is less than 0, exitting.")
             raise ValueError("Max conditioning set size must be non-negative.")
 
-        for node1, node2 in combinations(range(self.n_nodes), 2):
+        for node1, node2 in tqdm(combinations(range(self.n_nodes), 2),
+                                 desc="Adding independence assumptions and arguments",
+                                 total=self.n_nodes * (self.n_nodes - 1) // 2):
             for conditioning_set_size in range(self.max_conditioning_set_size + 1):
                 for conditioning_set in combinations(
                         set(range(self.n_nodes)) - {node1, node2},
@@ -278,10 +285,12 @@ class BSAFBuilderV2:
 
         paths = self._get_all_paths(node1, node2, self.max_path_length)
         conditioning_nodes_all = set(range(self.n_nodes)) - {node1, node2}
-        for conditioning_set_size in range(self.max_conditioning_set_size + 1):
-            for conditioning_set in combinations(conditioning_nodes_all, conditioning_set_size):
-                conditioning_set = frozenset(conditioning_set)  # make it immutable for use in assumptions
-                for path in paths:
+        for path in tqdm(paths,
+                         desc=f"Finding active paths for dummy nodes {node1} and {node2}",
+                         total=len(paths)):
+            for conditioning_set_size in range(self.max_conditioning_set_size + 1):
+                for conditioning_set in combinations(conditioning_nodes_all, conditioning_set_size):
+                    conditioning_set = frozenset(conditioning_set)  # make it immutable for use in assumptions
                     # Get all active collider trees for the path
                     solutions = self._get_path_solutions(path, conditioning_set)
                     all_solutions[path] = all_solutions.get(path, dict())
@@ -318,7 +327,9 @@ class BSAFBuilderV2:
         """
         generic_node1, generic_node2 = 0, 1
         generic_solution = self._get_generic_solution(generic_node1, generic_node2)
-        for node1, node2 in combinations(range(self.n_nodes), 2):
+        for node1, node2 in tqdm(combinations(range(self.n_nodes), 2),
+                                 desc="Adding active path assumptions and arguments",
+                                 total=self.n_nodes * (self.n_nodes - 1) // 2):
             if node1 > node2:  # Swap nodes to ensure node1 < node2 for symmetry
                 node1, node2 = node2, node1
 
@@ -388,7 +399,11 @@ class BSAFBuilderV2:
 
 if __name__ == "__main__":
     # Example usage
-    n_nodes = 4
-    bsaf_builder = BSAFBuilderV2(n_nodes=n_nodes)
+    n_nodes = 11
+    bsaf_builder = BSAFBuilderV2(n_nodes=n_nodes,
+                                 max_cycle_size=5,
+                                 max_collider_tree_depth=2,
+                                 max_path_length=3,
+                                 max_conditioning_set_size=3)
     bsaf = bsaf_builder.create_bsaf()
-    print(bsaf)
+    # print(bsaf)
