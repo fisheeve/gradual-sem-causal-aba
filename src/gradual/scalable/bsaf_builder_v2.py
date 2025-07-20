@@ -168,7 +168,7 @@ class BSAFBuilderV2:
         """
         paths = []
         intermediate_nodes_all = set(range(self.n_nodes)) - {source, target}
-        for num_intermediate_nodes in range(0, self.max_collider_tree_depth):
+        for num_intermediate_nodes in range(0, max_path_length):
             for intermediate_nodes in permutations(intermediate_nodes_all, num_intermediate_nodes):
                 paths.append((source, *intermediate_nodes, target))
         return paths
