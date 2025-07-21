@@ -41,7 +41,7 @@ ALPHA = 0.01
 INDEP_TEST = 'fisherz'
 
 SAMPLE_SIZE = 5000
-RESULT_DIR = Path("./results/gradual/min_scale_v2")
+RESULT_DIR = Path("./results/gradual/min_scale_v2_no_collider")
 
 DATASETS = [
     'cancer',
@@ -49,8 +49,8 @@ DATASETS = [
     'survey',
     'asia',
     'sachs',
-    # 'child',
-    # 'insurance',
+    'child',
+    'insurance',
 ]
 
 N_NODES = {'cancer':5, 
@@ -58,8 +58,8 @@ N_NODES = {'cancer':5,
            'survey':6, 
            'asia':8, 
            'sachs':11, 
-        #    'child':20, 
-        #    'insurance':27
+           'child':20, 
+           'insurance':27
 }
 
 SEED = 2024
@@ -123,9 +123,11 @@ def main(n_runs, steps_ahead):
         bsaf_builder = BSAFBuilderV2(
             n_nodes=n_nodes,
             max_cycle_size=3,
-            max_collider_tree_depth = 1,
+            max_collider_tree_depth = 1,  # doesn't matter when without collider tree arguments
             max_path_length = 3,
-            max_conditioning_set_size = 3)  # everything is maximal for given n_nodes, full scale
+            max_conditioning_set_size = 2,
+            include_collider_tree_arguments=False,
+            )
         bsaf = bsaf_builder.create_bsaf()
         assumptions_dict = bsaf_builder.name_to_assumption
         elapsed_bsaf_creation = time.time() - start_bsaf_creation
