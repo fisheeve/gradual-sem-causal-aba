@@ -113,7 +113,8 @@ def set_weights_according_to_facts(assum_dict: Dict[str, Assumption], facts: Lis
     for fact in facts:
         assumption_name = assums.indep(fact.node1, fact.node2, fact.node_set)
         new_weight = FactoryV1._get_indep_assum_strength(fact)
-        assum_dict[assumption_name].update_weight(new_weight)
+        if assumption_name in assum_dict:
+            assum_dict[assumption_name].update_weight(new_weight)
 
 
 if __name__ == "__main__":
