@@ -10,7 +10,7 @@ cd $PBS_O_WORKDIR
 module load R
 export CUDA_VISIBLE_DEVICES="[]"
 
-python scripts/python_scripts/extension_based/experiment_v2_minimal_scale_no_collider.py \
+python scripts/python_scripts/gradual/experiment_v2_minimal_scale_no_collider.py \
     --n-runs 50 \
     --sample-size 5000 \
     --device 0
