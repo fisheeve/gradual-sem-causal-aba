@@ -31,6 +31,9 @@ install: clean
 	git clone https://github.com/briziorusso/ArgCausalDisco.git
 	git clone https://github.com/xunzheng/notears.
 	git clone https://github.com/briziorusso/GradualABA.git
+	git clone https://github.com/bd2kccd/py-causal.git
+
+	cd py-causal && python setup.py install;
 
 	@echo "[TODO: fix this somehow] Applying custom changes to aspforaba sub-repo..."
 	cd aspforaba && git apply ../aspforaba.patch
@@ -53,3 +56,4 @@ clean:
 	-rm -rf ArgCausalDisco
 	-rm -rf notears
 	-rm -rf GradualABA
+	-rm -rf py-causal

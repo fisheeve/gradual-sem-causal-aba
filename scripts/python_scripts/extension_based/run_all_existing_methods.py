@@ -45,7 +45,7 @@ model_list = [
     'mpc',
     'nt',
     'abapc',
-    # ,'fgs' TODO: make this method work
+    'fgs'
 ]
 
 names_dict = {'pc': 'PC',
@@ -169,6 +169,15 @@ def main(n_runs=50, sample_size=5000, device=0):
                 # cache intermediate results
                 mt_res.to_csv(mt_path, index=False)
                 mt_res_cpdag.to_csv(mt_cpdag_path, index=False)
+
+    if 'fgs' in model_list:
+        # to properly stop the JVM for py-causal
+        from pycausal.pycausal import pycausal as pyc
+        jm = pyc()
+        try:
+            jm.stop_vm()
+        except:
+            pass
 
 if __name__ == "__main__":
     args = parse_args()
