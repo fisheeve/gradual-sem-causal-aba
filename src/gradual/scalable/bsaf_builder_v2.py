@@ -47,6 +47,7 @@ def get_reindex_map(n_nodes, node1: int, node2: int, new_node1: int, new_node2: 
 class BSAFBuilderV2:
     def __init__(self,
                  n_nodes: int,
+                 include_collider_tree_arguments: bool = True,
                  default_weight: float = DEFAULT_WEIGHT,
                  max_cycle_size: int = 5,
                  max_collider_tree_depth: int = 5,
@@ -72,6 +73,8 @@ class BSAFBuilderV2:
         self.max_path_length = min(max_path_length, n_nodes-1)
         # At most n_nodes-2 conditioning variables
         self.max_conditioning_set_size = min(max_conditioning_set_size, n_nodes-2)
+        # If collider tree arguments are not included, we skip their generation, which can speed up the process
+        self.include_collider_tree_arguments = include_collider_tree_arguments
     
     def _get_assumption_from_contrary(self, sentence: Sentence):
         try:
@@ -389,6 +392,51 @@ class BSAFBuilderV2:
                         self._add_argument(claim=path_assumption_name,
                                            premise=[asm.arr(arr[0], arr[1]) for arr in active_collider_tree])
 
+    def _add_active_path_assums_and_arguments_wo_collider_trees(self):
+        """Add active path assumptions and arguments without collider trees.
+        This is a simplified version that does not consider collider trees, which can speed up the process.
+        """
+        for node1, node2 in tqdm(combinations(range(self.n_nodes), 2),
+                                 desc="Adding active path assumptions and arguments without collider trees",
+                                 total=self.n_nodes * (self.n_nodes - 1) // 2):
+            if node1 > node2:
+                node1, node2 = node2, node1
+            
+            paths = self._get_all_paths(node1, node2, self.max_path_length)
+            conditioning_nodes_all = set(range(self.n_nodes)) - {node1, node2}
+            for path in paths:
+                for conditioning_set_size in range(self.max_conditioning_set_size + 1):
+                    for conditioning_set in combinations(conditioning_nodes_all, conditioning_set_size):
+                        # TODO: code repetition with self._add_active_path_assums_and_arguments(), refactor
+                        conditioning_set = frozenset(conditioning_set)
+                        path_assumption_name = active_path(path, conditioning_set)
+                        self._add_assumption(path_assumption_name, initial_weight=self.default_weight)
+
+                        # Add argument that active path attacks no-edge assumption and vice versa
+                        self._add_argument(claim=asm.contrary(asm.noe(node1, node2)), premise=[path_assumption_name])
+                        self._add_argument(claim=asm.contrary(path_assumption_name), premise=[asm.noe(node1, node2)])
+
+                        # Add argument that active path attacks independence assumption and vice versa
+                        indep_assumption_name = asm.indep(node1, node2, conditioning_set)
+                        self._add_argument(claim=asm.contrary(indep_assumption_name), premise=[path_assumption_name])
+                        self._add_argument(claim=asm.contrary(path_assumption_name), premise=[indep_assumption_name])
+
+                        # supporting collider structure for nodes in conditioning set,  mutually attacking anything else
+                        for pos in range(1, len(path) - 1):
+                            if path[pos] in conditioning_set:
+                                # Add argument that active path supports collider structure
+                                self._add_argument(claim=asm.arr(path[pos-1], path[pos]), premise=[path_assumption_name])
+                                self._add_argument(claim=asm.arr(path[pos+1], path[pos]), premise=[path_assumption_name])
+                                # attack and get attacked by anything else
+                                self._add_argument(claim=asm.contrary(asm.arr(path[pos], path[pos-1])),
+                                                premise=[path_assumption_name])
+                                self._add_argument(claim=asm.contrary(asm.arr(path[pos], path[pos+1])),
+                                                premise=[path_assumption_name])
+                                self._add_argument(claim=asm.contrary(path_assumption_name),
+                                                premise=[asm.arr(path[pos], path[pos+1])])
+                                self._add_argument(claim=asm.contrary(path_assumption_name),
+                                                premise=[asm.arr(path[pos], path[pos-1])])
+
     def build_arguments(self):
         """Build all arguments for the BSAF.
         This method should be called after all assumptions are added.
@@ -396,7 +444,10 @@ class BSAFBuilderV2:
         self._add_arr_and_mutual_exclusion_arguments()
         self._add_cycle_arguments()
         self._add_indep_assums_and_indep_noe_arguments()
-        self._add_active_path_assums_and_arguments()
+        if self.include_collider_tree_arguments:
+            self._add_active_path_assums_and_arguments()
+        else:
+            self._add_active_path_assums_and_arguments_wo_collider_trees()
 
     def create_bsaf(self):
         """
