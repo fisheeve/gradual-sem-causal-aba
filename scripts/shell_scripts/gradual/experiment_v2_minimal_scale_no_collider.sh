@@ -12,8 +12,7 @@ export CUDA_VISIBLE_DEVICES="[]"
 
 python scripts/python_scripts/gradual/experiment_v2_minimal_scale_no_collider.py \
     --n-runs 50 \
-    --sample-size 5000 \
-    --device 0
+    --steps-ahead 10
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to run the bnlearn experiment script."
