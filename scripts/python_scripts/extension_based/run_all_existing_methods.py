@@ -131,10 +131,16 @@ def main(n_runs=50, sample_size=5000, device=0):
                         mt_cpdag = {col: np.nan for col in res_columns}
                         mt_dag = {col: np.nan for col in res_columns}
                     else:
-                        B_est = (W_est != 0).astype(int)
-                        mt_cpdag = DAGMetrics(dag2cpdag(B_est), B_true).metrics
-                        B_est = (W_est > 0).astype(int)
-                        mt_dag = DAGMetrics(B_est, B_true).metrics
+                        try:
+                            B_est = (W_est != 0).astype(int)
+                            mt_cpdag = DAGMetrics(dag2cpdag(B_est), B_true).metrics
+                        except Exception as e:
+                            mt_cpdag = {col: np.nan for col in res_columns}
+                        try:
+                            B_est = (W_est > 0).astype(int)
+                            mt_dag = DAGMetrics(B_est, B_true).metrics
+                        except Exception as e:
+                            mt_dag = {col: np.nan for col in res_columns}
                 else:
                     raise ValueError(f"Method {method} not recognized")
 
