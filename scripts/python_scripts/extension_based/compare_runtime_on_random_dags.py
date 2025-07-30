@@ -25,7 +25,7 @@ def parse_args():
     parser = ArgumentParser(description="Compare ABAPC implementations on random DAGs")
     parser.add_argument('--n-runs', type=int, default=50, help='Number of runs for the experiment')
     parser.add_argument('--sample-size', type=int, default=5000, help='Sample size for the random DAGs')
-    parser.add_argument('--output-dir', type=str, default='results_pure_aba', help='Directory to save results')
+    parser.add_argument('--output-dir', type=str, default='results/extension_based_semantics', help='Directory to save results')
     return parser.parse_args()
 
 

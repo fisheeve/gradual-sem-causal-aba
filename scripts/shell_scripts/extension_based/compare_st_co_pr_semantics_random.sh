@@ -13,7 +13,7 @@ export CUDA_VISIBLE_DEVICES="[]"
 python scripts/python_scripts/extension_based/compare_st_co_pr_semantics_random.py \
     --n-runs 50 \
     --sample-size 5000 \
-    --output-dir $PBS_O_WORKDIR/results_pure_aba/
+    --output-dir $PBS_O_WORKDIR/results/extension_based_semantics/
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to run the random graph experiment script."

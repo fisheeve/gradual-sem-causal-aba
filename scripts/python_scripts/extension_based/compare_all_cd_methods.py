@@ -22,7 +22,7 @@ from logger import logger
 
 ALPHA = 0.01
 INDEP_TEST = 'fisherz'
-RESULTS_DIR = Path('results_pure_aba')
+RESULTS_DIR = Path('results/extension_based_semantics')
 RESULTS_DIR.mkdir(exist_ok=True)
 LOAD_SAVED = False
 
