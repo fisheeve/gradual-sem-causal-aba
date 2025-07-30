@@ -8,7 +8,10 @@ import numpy as np
 from ArgCausalDisco.utils.helpers import random_stability
 from ArgCausalDisco.cd_algorithms.PC import pc
 from ArgCausalDisco.utils.graph_utils import initial_strength
+from ArgCausalDisco.utils.graph_utils import set_of_models_to_set_of_graphs
+from ArgCausalDisco.causalaba import CausalABA
 
+from src.utils.fact_utils import get_fact_location
 from src.utils.utils import get_arrows_from_model, get_matrix_from_arrow_set
 from src.utils.enums import Fact, RelationEnum
 from src.causal_aba.factory import ABASPSolverFactory
@@ -312,3 +315,24 @@ def get_best_model_various_valuations(models, n_nodes, cg, alpha, indep_to_stren
         arrows_sum=arrows_sum_best_model,
         arrows_mean=arrows_mean_best_model
     )
+
+
+def get_models_from_facts(facts, seed, n_nodes, base_location='./facts.lp'):
+    """ Get models from facts using the CausalABA framework.
+    Args:
+        facts: list of Fact objects
+        seed: int, random seed for reproducibility
+        n_nodes: int, number of nodes in the causal graph
+        base_location: str, base path for saving facts
+    Returns:
+        model_sets: list of models, where each model is a frozenset of node pair tuples 
+        representing arrows in the causal graph."""
+    facts_location = get_fact_location(facts, base_location=base_location)
+
+    random_stability(seed)
+    model_sets, _ = CausalABA(
+        n_nodes, facts_location, weak_constraints=True, skeleton_rules_reduction=True,
+        fact_pct=1.0, search_for_models='first',
+        opt_mode='optN', print_models=False, set_indep_facts=False)
+    model_sets, _ = set_of_models_to_set_of_graphs(model_sets, n_nodes, False)
+    return model_sets
