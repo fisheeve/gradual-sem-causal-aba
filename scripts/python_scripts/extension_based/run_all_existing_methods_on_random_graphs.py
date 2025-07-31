@@ -112,6 +112,7 @@ def main(n_runs=50, sample_size=5000, device=0):
                             seed=seed,
                             standardise=True
                     )
+                    logger.info(f"True graph {B_true}")
                     if method == 'random':
                         random_stability(seed)
                         start = time.time()
