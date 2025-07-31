@@ -1,6 +1,8 @@
 import numpy as np
 from itertools import chain, combinations, product
 from aspforaba.src.aspforaba.abaf import AssumptionSet
+from typing import List, Dict, Tuple, Set, FrozenSet
+import networkx as nx
 
 
 def is_unique(ary):
@@ -82,3 +84,11 @@ def get_matrix_from_arrow_set(arrow_set, n_nodes):
     for node1, node2 in arrow_set:
         B_est[node1, node2] = 1
     return B_est
+
+
+def check_arrows_dag(arrows: Set[Tuple[int, int]]) -> bool:    
+    """Check if the given set of arrows is acyclic.
+    """
+    G = nx.DiGraph()
+    G.add_edges_from(arrows)
+    return nx.is_directed_acyclic_graph(G)

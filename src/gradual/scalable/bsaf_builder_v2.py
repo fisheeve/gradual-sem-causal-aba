@@ -11,18 +11,10 @@ from GradualABA.BSAF.BSAF import BSAF
 from itertools import combinations, permutations
 from tqdm import tqdm
 from src.utils.resource_utils import MemoryUsageExceededException, check_memory_usage
+from src.utils.utils import check_arrows_dag
 from src.constants import MEMORY_THRESHOLD_PERCENT
-import networkx as nx
 
 from logger import logger
-
-
-def check_acyclic(arrows: Set[Tuple[int, int]]) -> bool:    
-    """Check if the given set of arrows is acyclic.
-    """
-    G = nx.DiGraph()
-    G.add_edges_from(arrows)
-    return nx.is_directed_acyclic_graph(G)
 
 
 def active_path(path_nodes: Tuple, S: set):
@@ -275,7 +267,7 @@ class BSAFBuilderV2:
                                     continue
                                 diff_set = {candidate_arrow, *branch} - arrows_so_far  # add branch arrows to the set
                                 arrows_so_far.update(diff_set)
-                                if check_acyclic(arrows_so_far):
+                                if check_arrows_dag(arrows_so_far):
                                     # if the arrows so far are acyclic, continue solving with the branch arrows added
                                     dfs(previous_arrow_on_path=candidate_arrow,  # continue solving with the branch arrows added
                                         current_node_id=current_node_id + 1,
