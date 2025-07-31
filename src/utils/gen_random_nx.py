@@ -88,7 +88,9 @@ def generate_random_bn_data(n_nodes=5, n_edges=6, n_samples=1000, seed=42, stand
         df_le_s = df_le.to_numpy().astype(float)
 
     # Extract true DAG structure
-    G = nx.from_edgelist(list(model.edges()), create_using=nx.DiGraph)
+    G = nx.DiGraph()
+    G.add_nodes_from(nodes)
+    G.add_edges_from(model.edges())
     B_true = nx.adjacency_matrix(G).todense()
     B_pd = pd.DataFrame(B_true, columns=G.nodes(), index=G.nodes())
     B_pd = B_pd.reindex(sorted(df.columns), axis=0)
