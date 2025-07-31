@@ -96,7 +96,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def main(n_runs, steps_ahead):
+def main(n_runs):
     param_sets = [
         ParamSet(cycle_length=cycle_length,
                  ct_depth=ct_depth,
@@ -193,7 +193,7 @@ def main(n_runs, steps_ahead):
 
                     start_orig_ranking = time.time()
                     original_ranking_I, best_model_original_ranking = limited_depth_search_best_model(
-                        steps_ahead=steps_ahead,
+                        steps_ahead=param_set.search_depth,
                         sorted_arrows=sorted_arrows,
                         is_dag=check_arrows_dag,
                         get_score=score_original_prefilled
