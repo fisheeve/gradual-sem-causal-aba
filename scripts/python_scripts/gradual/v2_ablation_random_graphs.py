@@ -129,15 +129,22 @@ def main(n_runs):
                 random_stability(SEED)
                 seeds_list = np.random.randint(0, 10000, (n_runs,)).tolist()
 
+                if param_set.ct_depth == -1:
+                    include_collider_tree_arguments = False
+                    max_ct_depth = 0  # dummy value, not used
+                else:
+                    include_collider_tree_arguments = True
+                    max_ct_depth = param_set.ct_depth
                 # create bsaf
                 start_bsaf_creation = time.time()
                 try:
                     bsaf_builder = BSAFBuilderV2(
                         n_nodes=n_nodes,
-                        max_cycle_size=n_nodes,
-                        max_collider_tree_depth=n_nodes-1,
-                        max_path_length=n_nodes-1,
-                        max_conditioning_set_size=n_nodes-2)  # everything is maximal for given n_nodes, full scale
+                        include_collider_tree_arguments=include_collider_tree_arguments,
+                        max_cycle_size=param_set.cycle_length,
+                        max_collider_tree_depth=max_ct_depth,
+                        max_path_length=param_set.path_length,
+                        max_conditioning_set_size=param_set.c_set_size)  # everything is maximal for given n_nodes, full scale
                     bsaf = bsaf_builder.create_bsaf()
                     assumptions_dict = bsaf_builder.name_to_assumption
                 except MemoryUsageExceededException as e:
