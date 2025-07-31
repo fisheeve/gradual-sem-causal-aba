@@ -128,7 +128,6 @@ def main(n_runs):
 
                 random_stability(SEED)
                 seeds_list = np.random.randint(0, 10000, (n_runs,)).tolist()
-                n_nodes = N_NODES[dataset]
 
                 # create bsaf
                 start_bsaf_creation = time.time()
