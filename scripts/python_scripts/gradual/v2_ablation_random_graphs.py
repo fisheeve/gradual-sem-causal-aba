@@ -13,7 +13,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import time
-from dataclasses import dataclass
+from itertools import product
 from functools import partial
 from pathlib import Path
 from tqdm import tqdm
@@ -42,38 +42,16 @@ INDEP_TEST = 'fisherz'
 SAMPLE_SIZE = 5000
 RESULT_DIR = Path("./results/gradual/v2_ablation_random_graphs")
 
-N_NODES = [3, 4, 5, 6, 7, 8, 10, 15, 20]
+N_NODES = [5, 10, 15, 20]
 N_NODES_DOUBLE = [10, 15, 20]
 
-CYCLE_LENGTH = [3, 4, 5]
-CT_DEPTH = [-1, 0, 1, 2, 3, 4]
-PATH_LENGTH = [2, 3, 4]
+NEIGHBOURHOOD_N_NODES = [3, 4, 5]
 C_SET_SIZE = [1, 2, 3]
 SEARCH_DEPTH = [5, 10, 15]
 
 SEED = 2024
 
 TIMEOUT = 30 * 60  # 30 minutes
-
-
-@dataclass
-class ParamSet:
-    cycle_length: int
-    ct_depth: int
-    path_length: int
-    c_set_size: int
-    search_depth: int
-
-
-def is_param_set_valid(n_nodes,
-                       param_set: ParamSet) -> bool:
-    is_valid = (
-        param_set.cycle_length <= n_nodes and
-        param_set.ct_depth <= n_nodes-1 and
-        param_set.path_length <= n_nodes-1 and
-        param_set.c_set_size <= n_nodes-2
-    )
-    return is_valid
 
 
 @timeout(TIMEOUT)  # Set a timeout of 30 minutes for the model run
@@ -97,159 +75,157 @@ def parse_args():
 
 
 def main(n_runs):
-    param_sets = [
-        ParamSet(cycle_length=cycle_length,
-                 ct_depth=ct_depth,
-                 path_length=path_length,
-                 c_set_size=c_set_size,
-                 search_depth=search_depth)
-        for cycle_length in CYCLE_LENGTH
-        for ct_depth in CT_DEPTH
-        for path_length in PATH_LENGTH
-        for c_set_size in C_SET_SIZE
-        for search_depth in SEARCH_DEPTH
-    ]
-
     facts_path = Path('./facts')
     facts_path.mkdir(parents=True, exist_ok=True)
     cpdag_metrics_df = pd.DataFrame()
     dag_metrics_df = pd.DataFrame()
 
-    for n_nodes in N_NODES:
+    param_sets = product(
+        N_NODES,
+        NEIGHBOURHOOD_N_NODES,
+        C_SET_SIZE,
+        [True, False],  # use_collider_arguments
+        SEARCH_DEPTH
+    )
+
+    for param_set in param_sets:
+        n_nodes, neighbourhood_n_nodes, c_set_size, use_collider_arguments, search_depth = param_set
+        if neighbourhood_n_nodes > n_nodes:
+            continue
         n_edges_candidates = [n_nodes]
         if n_nodes in N_NODES_DOUBLE:
             n_edges_candidates.append(n_nodes * 2)  # double the number of nodes
         for n_edges in n_edges_candidates:
-            for param_set in param_sets:
-                if not is_param_set_valid(n_nodes, param_set):
-                    continue
-                dataset = f'random_graphs_n{n_nodes}_e{n_edges}'
-                logger.info(f"Running experiment for dataset: {dataset}, param_set: {param_set}")
 
-                random_stability(SEED)
-                seeds_list = np.random.randint(0, 10000, (n_runs,)).tolist()
+            dataset = f'random_graphs_n{n_nodes}_e{n_edges}'
+            logger.info(
+                f"Running experiment for dataset: {dataset}, "
+                f"neighbourhood_n_nodes: {neighbourhood_n_nodes}, "
+                f"use_collider_arguments: {use_collider_arguments},"
+                f"c_set_size: {c_set_size}, n_runs: {n_runs}")
 
-                if param_set.ct_depth == -1:
-                    include_collider_tree_arguments = False
-                    max_ct_depth = 0  # dummy value, not used
-                else:
-                    include_collider_tree_arguments = True
-                    max_ct_depth = param_set.ct_depth
-                # create bsaf
-                start_bsaf_creation = time.time()
+            random_stability(SEED)
+            seeds_list = np.random.randint(0, 10000, (n_runs,)).tolist()
+
+            # create bsaf
+            start_bsaf_creation = time.time()
+            try:
+                bsaf_builder = BSAFBuilderV2(
+                    n_nodes=n_nodes,
+                    include_collider_tree_arguments=use_collider_arguments,
+                    neighbourhood_n_nodes=neighbourhood_n_nodes,
+                    max_conditioning_set_size=c_set_size)  # everything is maximal for given n_nodes, full scale
+                bsaf = bsaf_builder.create_bsaf()
+                assumptions_dict = bsaf_builder.name_to_assumption
+            except MemoryUsageExceededException as e:
+                logger.error(
+                    f"Memory usage exceeded while creating BSAF for {dataset}, "
+                    f"neighbourhood_n_nodes: {neighbourhood_n_nodes}, "
+                    f"use_collider_arguments: {use_collider_arguments}, "
+                    f"c_set_size: {c_set_size}: {e}")
+                continue
+            elapsed_bsaf_creation = time.time() - start_bsaf_creation
+
+            for seed in tqdm(seeds_list, desc=f"Running {dataset} with {n_runs} seeds"):
+                X_s, B_true = generate_random_bn_data(
+                    n_nodes=n_nodes,
+                    n_edges=n_edges,
+                    n_samples=SAMPLE_SIZE,
+                    seed=seed,
+                    standardise=True
+                )
+                random_stability(seed)
+                cg, facts = get_cg_and_facts(X_s, alpha=ALPHA, indep_test=INDEP_TEST)
+                facts = sorted(facts, key=lambda x: x.score, reverse=True)  # sort by score
+
+                # run gradual aba to get the strengths
+                start_model_solution = time.time()
+                reset_weights(assumptions_dict)
+                set_weights_according_to_facts(assumptions_dict, facts)
                 try:
-                    bsaf_builder = BSAFBuilderV2(
+                    output = run_model_with_timeout(
                         n_nodes=n_nodes,
-                        include_collider_tree_arguments=include_collider_tree_arguments,
-                        max_cycle_size=param_set.cycle_length,
-                        max_collider_tree_depth=max_ct_depth,
-                        max_path_length=param_set.path_length,
-                        max_conditioning_set_size=param_set.c_set_size)  # everything is maximal for given n_nodes, full scale
-                    bsaf = bsaf_builder.create_bsaf()
-                    assumptions_dict = bsaf_builder.name_to_assumption
-                except MemoryUsageExceededException as e:
-                    logger.error(
-                        f"Memory usage exceeded while creating BSAF for {dataset} with param_set {param_set}: {e}")
-                    continue
-                elapsed_bsaf_creation = time.time() - start_bsaf_creation
-
-                for seed in tqdm(seeds_list, desc=f"Running {dataset} with {n_runs} seeds"):
-                    X_s, B_true = generate_random_bn_data(
-                        n_nodes=n_nodes,
-                        n_edges=n_edges,
-                        n_samples=SAMPLE_SIZE,
-                        seed=seed,
-                        standardise=True
+                        bsaf=bsaf,
+                        model_name=None,
+                        set_aggregation=SetMinAggregation(),
+                        aggregation=TopDiffAggregation(),
+                        influence=LinearInfluence(conservativeness=1),
+                        conservativeness=1,
+                        iterations=25,
                     )
-                    random_stability(seed)
-                    cg, facts = get_cg_and_facts(X_s, alpha=ALPHA, indep_test=INDEP_TEST)
-                    facts = sorted(facts, key=lambda x: x.score, reverse=True)  # sort by score
+                except TimeoutException as e:
+                    logger.error(f"Timeout exceeded while running model for {dataset} with seed {seed}, "
+                                f"neighbourhood_n_nodes: {neighbourhood_n_nodes}, "
+                                f"use_collider_arguments: {use_collider_arguments}, "
+                                f"c_set_size: {c_set_size}: {e}")
+                    break
+                elapsed_model_solution = time.time() - start_model_solution
+                is_converged = all(output.has_converged_map.values())
 
-                    # run gradual aba to get the strengths
-                    start_model_solution = time.time()
-                    reset_weights(assumptions_dict)
-                    set_weights_according_to_facts(assumptions_dict, facts)
-                    try:
-                        output = run_model_with_timeout(
-                            n_nodes=n_nodes,
-                            bsaf=bsaf,
-                            model_name=None,
-                            set_aggregation=SetMinAggregation(),
-                            aggregation=TopDiffAggregation(),
-                            influence=LinearInfluence(conservativeness=1),
-                            conservativeness=1,
-                            iterations=25,
-                        )
-                    except TimeoutException as e:
-                        logger.error(f"Timeout exceeded while running model for {dataset} with seed {seed}, "
-                                     f"params {param_set}: {e}")
-                        break
-                    elapsed_model_solution = time.time() - start_model_solution
-                    is_converged = all(output.has_converged_map.values())
+                score_original_prefilled = partial(score_model_original,
+                                                n_nodes=n_nodes,
+                                                cg=cg,
+                                                alpha=ALPHA,
+                                                return_only_I=True)
 
-                    score_original_prefilled = partial(score_model_original,
-                                                       n_nodes=n_nodes,
-                                                       cg=cg,
-                                                       alpha=ALPHA,
-                                                       return_only_I=True)
+                sorted_arrows = sorted([(strength, arrow) for arrow, strength in output.arrow_strengths.items()],
+                                    reverse=True)
+                sorted_arrows = [parse_arrow(arrow) for _, arrow in sorted_arrows]
 
-                    sorted_arrows = sorted([(strength, arrow) for arrow, strength in output.arrow_strengths.items()],
-                                           reverse=True)
-                    sorted_arrows = [parse_arrow(arrow) for _, arrow in sorted_arrows]
+                start_orig_ranking = time.time()
+                original_ranking_I, best_model_original_ranking = limited_depth_search_best_model(
+                    steps_ahead=search_depth,
+                    sorted_arrows=sorted_arrows,
+                    is_dag=check_arrows_dag,
+                    get_score=score_original_prefilled
+                )
+                elapsed_orig_ranking = time.time() - start_orig_ranking
 
-                    start_orig_ranking = time.time()
-                    original_ranking_I, best_model_original_ranking = limited_depth_search_best_model(
-                        steps_ahead=param_set.search_depth,
-                        sorted_arrows=sorted_arrows,
-                        is_dag=check_arrows_dag,
-                        get_score=score_original_prefilled
-                    )
-                    elapsed_orig_ranking = time.time() - start_orig_ranking
+                add_info = {
+                    'dataset': dataset,
+                    'seed': seed,
+                    'n_nodes': n_nodes,
+                    'n_edges': n_edges,
+                    'neighbourhood_n_nodes': neighbourhood_n_nodes,
+                    'max_cycle_length': bsaf_builder.max_cycle_size,
+                    'max_ct_depth': bsaf_builder.max_collider_tree_depth if bsaf_builder.include_collider_tree_arguments else -1,
+                    'max_path_length': bsaf_builder.max_path_length,
+                    'max_c_set_size': bsaf_builder.max_conditioning_set_size,
+                    'search_depth': search_depth,
+                    'elapsed_bsaf_creation': elapsed_bsaf_creation,
+                    'elapsed_model_solution': elapsed_model_solution,
+                    'is_converged': is_converged,
+                    'fact_ranking_method': 'v2',
+                    'model_ranking_method': 'original_ranking',
+                    'num_edges_est': len(best_model_original_ranking),
+                    'best_model': best_model_original_ranking,
+                    'aba_elapsed': 0,  # No ABA elapsed time in this context
+                    'ranking_elapsed': elapsed_orig_ranking,
+                    'best_I': original_ranking_I,
+                }
+                logger.info(f"Run finnished: {add_info}")
 
-                    add_info = {
-                        'dataset': dataset,
-                        'seed': seed,
-                        'n_nodes': n_nodes,
-                        'n_edges': n_edges,
-                        'cycle_length': param_set.cycle_length,
-                        'ct_depth': param_set.ct_depth,
-                        'path_length': param_set.path_length,
-                        'c_set_size': param_set.c_set_size,
-                        'search_depth': param_set.search_depth,
-                        'elapsed_bsaf_creation': elapsed_bsaf_creation,
-                        'elapsed_model_solution': elapsed_model_solution,
-                        'is_converged': is_converged,
-                        'fact_ranking_method': 'v2',
-                        'model_ranking_method': 'original_ranking',
-                        'num_edges_est': len(best_model_original_ranking),
-                        'best_model': best_model_original_ranking,
-                        'aba_elapsed': 0,  # No ABA elapsed time in this context
-                        'ranking_elapsed': elapsed_orig_ranking,
-                        'best_I': original_ranking_I,
-                    }
-                    logger.info(f"Run finnished: {add_info}")
+                # get and store metrics
+                best_B_est = get_matrix_from_arrow_set(best_model_original_ranking, n_nodes)
+                mt_cpdag, mt_dag = get_metrics(best_B_est, B_true)
 
-                    # get and store metrics
-                    best_B_est = get_matrix_from_arrow_set(best_model_original_ranking, n_nodes)
-                    mt_cpdag, mt_dag = get_metrics(best_B_est, B_true)
+                # add base info
+                mt_cpdag.update(add_info)
+                mt_dag.update(add_info)
 
-                    # add base info
-                    mt_cpdag.update(add_info)
-                    mt_dag.update(add_info)
+                logger.info(f"Metrics; CPDAG: {mt_cpdag}, DAG: {mt_dag}")
 
-                    logger.info(f"Metrics; CPDAG: {mt_cpdag}, DAG: {mt_dag}")
+                # append to dataframes
+                cpdag_metrics_df = pd.concat([cpdag_metrics_df,
+                                            pd.DataFrame([mt_cpdag])],
+                                            ignore_index=True)
+                dag_metrics_df = pd.concat([dag_metrics_df,
+                                            pd.DataFrame([mt_dag])],
+                                        ignore_index=True)
 
-                    # append to dataframes
-                    cpdag_metrics_df = pd.concat([cpdag_metrics_df,
-                                                  pd.DataFrame([mt_cpdag])],
-                                                 ignore_index=True)
-                    dag_metrics_df = pd.concat([dag_metrics_df,
-                                                pd.DataFrame([mt_dag])],
-                                               ignore_index=True)
-
-                    # save to csv
-                    cpdag_metrics_df.to_csv(RESULT_DIR / f'cpdag_metrics.csv', index=False)
-                    dag_metrics_df.to_csv(RESULT_DIR / f'dag_metrics.csv', index=False)
+                # save to csv
+                cpdag_metrics_df.to_csv(RESULT_DIR / f'cpdag_metrics.csv', index=False)
+                dag_metrics_df.to_csv(RESULT_DIR / f'dag_metrics.csv', index=False)
 
 
 if __name__ == "__main__":

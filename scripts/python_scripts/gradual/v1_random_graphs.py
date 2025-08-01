@@ -80,9 +80,7 @@ def main(n_runs):
         start_bsaf_creation = time.time()
         bsaf_builder = BSAFBuilderV2(
             n_nodes=n_nodes,
-            max_cycle_size=n_nodes,
-            max_collider_tree_depth = n_nodes-1,
-            max_path_length = n_nodes-1,
+            neighbourhood_n_nodes=n_nodes,
             max_conditioning_set_size = n_nodes-2)  # everything is maximal for given n_nodes, full scale
         bsaf = bsaf_builder.create_bsaf()
         assumptions_dict = bsaf_builder.name_to_assumption

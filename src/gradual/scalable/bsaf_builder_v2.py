@@ -1,7 +1,7 @@
 import sys
 sys.path.append("GradualABA/")  # Adjust the path as necessary to import modules
 
-from typing import List, Dict, Tuple, Set, FrozenSet
+from typing import List, Dict, Tuple, Set, FrozenSet, Union
 from src.constants import DEFAULT_WEIGHT  # 0.5
 import src.causal_aba.assumptions as asm
 from GradualABA.ABAF.Assumption import Assumption, Sentence
@@ -52,10 +52,24 @@ class BSAFBuilderV2:
                  n_nodes: int,
                  include_collider_tree_arguments: bool = True,
                  default_weight: float = DEFAULT_WEIGHT,
+                 neighbourhood_n_nodes: Union[int, None] = None,
                  max_cycle_size: int = 5,
                  max_collider_tree_depth: int = 5,
                  max_path_length: int = 5,
                  max_conditioning_set_size: int = 5):
+        """
+        Initialize the BSAFBuilderV2 with the given parameters.
+        Args:
+            n_nodes (int): Number of nodes in the BSAF.
+            include_collider_tree_arguments (bool): Whether to include collider tree arguments.
+            default_weight (float): Default weight for assumptions.
+            neighbourhood_n_nodes (int, optional): Number of nodes in the neighbourhood for collider trees.
+                This parameter overrides max_cycle_size, max_collider_tree_depth, and max_path_length.
+            max_cycle_size (int): Maximum size of cycles to consider.
+            max_collider_tree_depth (int): Maximum depth of collider trees.
+            max_path_length (int): Maximum length of paths to consider.
+            max_conditioning_set_size (int): Maximum size of conditioning sets to consider.
+        """
         self.n_nodes = n_nodes
         self.default_weight = default_weight
         self.arguments = set()
@@ -68,17 +82,28 @@ class BSAFBuilderV2:
         self.name_to_sentence: Dict[str, Sentence] = dict()
         self.contrary_to_assumption: Dict[Sentence, Assumption] = dict()
 
-        # Longest cycle can be of size n_nodes, so we set reasonable limit
-        self.max_cycle_size = min(max_cycle_size, n_nodes)
-        # deepest collider tree can be of size n_nodes-1, so we set reasonable limit
-        self.max_collider_tree_depth = min(max_collider_tree_depth, n_nodes-1)  # Ensure depth does not exceed n_nodes-1
-        # longest path can be of size n_nodes-1, so we set reasonable limit
-        self.max_path_length = min(max_path_length, n_nodes-1)
-        # At most n_nodes-2 conditioning variables
+
+        if neighbourhood_n_nodes is not None:
+            assert isinstance(neighbourhood_n_nodes, int) and neighbourhood_n_nodes >= 3, \
+                "neighbourhood_n_nodes must be a positive integer greater or equal to 3."
+            self.max_cycle_size = neighbourhood_n_nodes
+            self.max_collider_tree_depth = neighbourhood_n_nodes - 3  # longest collider tree can be of size n_nodes-3
+            self.max_path_length = neighbourhood_n_nodes - 1  # longest path can be of size n_nodes-1
+        else:
+            # Longest cycle can be of size n_nodes, so we set reasonable limit
+            self.max_cycle_size = min(max_cycle_size, n_nodes)
+            # deepest collider tree can be of size n_nodes-3, so we set reasonable limit
+            # to see this consider the longest path in the collider tree, which can be of size n_nodes-3
+            # as it can't pass through the nodes in the v-structure, because there would be cycle
+            self.max_collider_tree_depth = min(max_collider_tree_depth, n_nodes-3)  # Ensure depth does not exceed n_nodes-3
+            # longest path can be of size n_nodes-1, so we set reasonable limit
+            self.max_path_length = min(max_path_length, n_nodes-1)
+            # At most n_nodes-2 conditioning variables
+
         self.max_conditioning_set_size = min(max_conditioning_set_size, n_nodes-2)
         # If collider tree arguments are not included, we skip their generation, which can speed up the process
         self.include_collider_tree_arguments = include_collider_tree_arguments
-    
+
     def _get_assumption_from_contrary(self, sentence: Sentence):
         try:
             assumption_name = sentence.name[1:]  # remove the leading -
@@ -179,20 +204,28 @@ class BSAFBuilderV2:
                 paths.append((source, *intermediate_nodes, target))
         return paths
 
-    def _get_all_descendant_branches(self, parent, conditioning_set: FrozenSet[int]) -> List[Set[Tuple]]:
-        if parent in conditioning_set:
+    def _get_all_descendant_branches(self, central_collider_node: int,
+                                     left_collider_node: int,
+                                     right_collider_node: int,
+                                     conditioning_set: FrozenSet[int]) -> List[Set[Tuple]]:
+        if central_collider_node in conditioning_set:
             logger.error("When building collider trees: parent node is in the conditioning set, cannot find descendants.")
             raise ValueError("Parent node cannot be in the conditioning set.")
 
         if self.max_collider_tree_depth == 0:
             return []
 
-        intermediate_nodes_all = set(range(self.n_nodes)) - {parent, *conditioning_set}
+        intermediate_nodes_all = set(range(self.n_nodes)) - {central_collider_node, 
+                                                             left_collider_node, 
+                                                             right_collider_node, 
+                                                             *conditioning_set}
         branches = []
+        # if len(intermediate_nodes_all) is 1 then possible max depth is 2
+        max_depth = min(self.max_collider_tree_depth, len(intermediate_nodes_all)+1)
         for descendant in conditioning_set:
-            for num_intermediate_nodes in range(0, self.max_collider_tree_depth):
+            for num_intermediate_nodes in range(0, max_depth):
                 for intermediate_nodes in permutations(intermediate_nodes_all, num_intermediate_nodes):
-                    branch_nodes_sequence = (parent, *intermediate_nodes, descendant)
+                    branch_nodes_sequence = (central_collider_node, *intermediate_nodes, descendant)
                     branch_arrows = frozenset({
                         (branch_nodes_sequence[i], branch_nodes_sequence[i + 1])
                         for i in range(len(branch_nodes_sequence) - 1)
@@ -260,8 +293,11 @@ class BSAFBuilderV2:
                         if (previous_arrow_on_path[1] == path_nodes[current_node_id]
                                 and candidate_arrow[1] == path_nodes[current_node_id]):  # collider case
                             # check out all possible descendants and paths to them that can help avoid blocking
-                            parent = path_nodes[current_node_id]
-                            branches = self._get_all_descendant_branches(parent, conditioning_set)
+
+                            branches = self._get_all_descendant_branches(central_collider_node=path_nodes[current_node_id], 
+                                                                         left_collider_node=path_nodes[current_node_id - 1], 
+                                                                         right_collider_node=path_nodes[current_node_id + 1],
+                                                                         conditioning_set=conditioning_set)
                             for branch in branches:  # check mutual exclusivity
                                 if any((arr[1], arr[0]) in arrows_so_far for arr in branch):
                                     continue
@@ -492,9 +528,7 @@ if __name__ == "__main__":
     # Example usage
     n_nodes = 11
     bsaf_builder = BSAFBuilderV2(n_nodes=n_nodes,
-                                 max_cycle_size=5,
-                                 max_collider_tree_depth=2,
-                                 max_path_length=3,
+                                 neighbourhood_n_nodes=4,
                                  max_conditioning_set_size=3)
     bsaf = bsaf_builder.create_bsaf()
     # print(bsaf)
