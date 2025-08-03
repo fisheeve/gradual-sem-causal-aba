@@ -51,7 +51,9 @@ SEARCH_DEPTH = [5, 10, 15]
 
 SEED = 2024
 
-TIMEOUT = 30 * 60  # 30 minutes
+TIMEOUT = 10 * 60  # 10 minutes
+
+LOAD_FROM_FILE = True
 
 
 @timeout(TIMEOUT)  # Set a timeout of 30 minutes for the model run
@@ -77,8 +79,26 @@ def parse_args():
 def main(n_runs):
     facts_path = Path('./facts')
     facts_path.mkdir(parents=True, exist_ok=True)
-    cpdag_metrics_df = pd.DataFrame()
-    dag_metrics_df = pd.DataFrame()
+    if LOAD_FROM_FILE:
+        logger.info("Loading metrics from file...")
+        cpdag_metrics_df = pd.read_csv(RESULT_DIR / 'cpdag_metrics.csv')
+        dag_metrics_df = pd.read_csv(RESULT_DIR / 'dag_metrics.csv')
+        processed = {
+            (row['n_nodes'],
+             row['n_edges'],
+             row['neighbourhood_n_nodes'],
+             row['use_collider_arguments'],
+             row['c_set_size'],
+             row['search_depth'],
+             row['seed'])
+            for _, row in cpdag_metrics_df.iterrows()
+        }
+    else:
+        logger.info("Starting new experiment, metrics will be saved to file.")
+        # Initialize empty dataframes for metrics
+        cpdag_metrics_df = pd.DataFrame()
+        dag_metrics_df = pd.DataFrame()
+        processed = set()
 
     param_sets = product(
         N_NODES,
@@ -127,6 +147,20 @@ def main(n_runs):
             elapsed_bsaf_creation = time.time() - start_bsaf_creation
 
             for seed in tqdm(seeds_list, desc=f"Running {dataset} with {n_runs} seeds"):
+                run_params = (
+                    n_nodes,
+                    n_edges,
+                    neighbourhood_n_nodes,
+                    use_collider_arguments,
+                    c_set_size,
+                    search_depth,
+                    seed
+                )
+                if run_params in processed:
+                    logger.info(f"Skipping already processed parameters: {run_params}")
+                    continue
+
+
                 X_s, B_true = generate_random_bn_data(
                     n_nodes=n_nodes,
                     n_edges=n_edges,
@@ -224,8 +258,10 @@ def main(n_runs):
                                         ignore_index=True)
 
                 # save to csv
-                cpdag_metrics_df.to_csv(RESULT_DIR / f'cpdag_metrics.csv', index=False)
-                dag_metrics_df.to_csv(RESULT_DIR / f'dag_metrics.csv', index=False)
+                cpdag_metrics_df.to_csv(RESULT_DIR / 'cpdag_metrics.csv', index=False)
+                dag_metrics_df.to_csv(RESULT_DIR / 'dag_metrics.csv', index=False)
+
+                processed.add(run_params)
 
 
 if __name__ == "__main__":
