@@ -27,7 +27,7 @@ from logger import logger
 
 ALPHA = 0.01
 INDEP_TEST = 'fisherz'
-RESULTS_DIR = Path('results/existing')
+RESULTS_DIR = Path('results/existing/bnlearn_graphs/')
 RESULTS_DIR.mkdir(exist_ok=True, parents=True)
 LOAD_SAVED = False
 
