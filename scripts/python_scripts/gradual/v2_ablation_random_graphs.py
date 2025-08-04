@@ -79,7 +79,7 @@ def parse_args():
 def main(n_runs):
     facts_path = Path('./facts')
     facts_path.mkdir(parents=True, exist_ok=True)
-    if LOAD_FROM_FILE:
+    if LOAD_FROM_FILE and (RESULT_DIR / 'cpdag_metrics.csv').exists() and (RESULT_DIR / 'dag_metrics.csv').exists():
         logger.info("Loading metrics from file...")
         cpdag_metrics_df = pd.read_csv(RESULT_DIR / 'cpdag_metrics.csv')
         dag_metrics_df = pd.read_csv(RESULT_DIR / 'dag_metrics.csv')
