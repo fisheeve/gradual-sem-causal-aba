@@ -47,16 +47,16 @@ N_NODES_DOUBLE = [10, 15, 20]
 
 NEIGHBOURHOOD_N_NODES = [3, 4, 5]
 C_SET_SIZE = [1, 2, 3]
-SEARCH_DEPTH = [5, 10, 15]
+SEARCH_DEPTH = [4, 8, 12]
 
 SEED = 2024
 
-TIMEOUT = 10 * 60  # 10 minutes
+TIMEOUT = 5 * 60  # 5 minutes
 
 LOAD_FROM_FILE = True
 
 
-@timeout(TIMEOUT)  # Set a timeout of 30 minutes for the model run
+@timeout(TIMEOUT)  # Set a timeout of 5 minutes for the model run
 def run_model_with_timeout(n_nodes, bsaf, model_name, set_aggregation, aggregation, influence, conservativeness, iterations):
     return run_model(
         n_nodes=n_nodes,
@@ -87,7 +87,7 @@ def main(n_runs):
             (row['n_nodes'],
              row['n_edges'],
              row['neighbourhood_n_nodes'],
-             row['use_collider_arguments'],
+             row['max_ct_depth'],
              row['c_set_size'],
              row['search_depth'],
              row['seed'])
@@ -151,8 +151,8 @@ def main(n_runs):
                     n_nodes,
                     n_edges,
                     neighbourhood_n_nodes,
-                    use_collider_arguments,
-                    c_set_size,
+                    bsaf_builder.max_collider_tree_depth if bsaf_builder.include_collider_tree_arguments else -1,  # max_ct_depth
+                    bsaf_builder.max_conditioning_set_size,
                     search_depth,
                     seed
                 )
