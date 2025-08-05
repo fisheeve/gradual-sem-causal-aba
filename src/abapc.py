@@ -62,7 +62,7 @@ def get_cg_and_facts(data,
                      stable=True):
     n_nodes = data.shape[1]
     cg = pc(data=data, alpha=alpha, indep_test=indep_test, uc_rule=uc_rule,
-            stable=stable, show_progress=True, verbose=True)
+            stable=stable, show_progress=False, verbose=False)
     facts = []
 
     for node1, node2 in combinations(range(n_nodes), 2):
