@@ -21,13 +21,13 @@ ALPHA = 0.01
 INDEP_TEST = 'fisherz'
 SAMPLE_SIZE = 5000
 
-RESULT_DIR = Path("./results/existing/fact_sourcing_runtime")
+RESULT_DIR = Path("./results/existing/runtime_sourcing_facts_random_graphs")
 N_NODES = [3, 4, 5, 6, 7, 8, 10, 15, 20]
 N_NODES_DOUBLE = [10, 15, 20]
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run gradual ABA experiment v1")
+    parser = argparse.ArgumentParser(description="runtime_sourcing_facts_random_graphs")
     parser.add_argument('--n-runs', type=int, default=50, help='Number of runs for each dataset')
     return parser.parse_args()
 
