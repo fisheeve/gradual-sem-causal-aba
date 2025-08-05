@@ -5,6 +5,7 @@ sys.path.insert(0, 'notears/')
 
 from pathlib import Path
 import pytest
+import shutil
 
 from ArgCausalDisco.utils.helpers import random_stability
 from ArgCausalDisco.abapc import ABAPC
@@ -17,8 +18,6 @@ from src.utils.bn_utils import get_dataset
 def test_causalaba_equal_to_ABASP(seed):
     data, _ = get_dataset('cancer', seed=seed)
 
-    res_path = Path('./test_results')
-    res_path.mkdir(exist_ok=True)
     random_stability(seed)
     models, _ = ABAPC(data=data,
                     alpha=0.01,
@@ -34,6 +33,10 @@ def test_causalaba_equal_to_ABASP(seed):
     print(abasp_models)
     assert abasp_models == models
     print("ABASP and ABAPC models are equal, test passed successfully!")
+
+    # clean up
+    if Path('results/test_cancer_5_nodes').exists():
+        shutil.rmtree(Path('results/test_cancer_5_nodes'))
 
 
 if __name__ == "__main__":

@@ -2,9 +2,11 @@ import sys
 sys.path.insert(0, 'ArgCausalDisco/')
 sys.path.insert(0, 'notears/')
 
+import shutil
 from collections import defaultdict
 from ArgCausalDisco.abapc import ABAPC
 from src.abapc import get_arrow_sets
+from pathlib import Path
 
 
 def test_causalaba_equal_to_ABASP(mocker):
@@ -68,3 +70,7 @@ def test_causalaba_equal_to_ABASP(mocker):
     print('New implementation models: ', abasp_models)
     assert abasp_models == models
     print("ABASP and ABAPC models are equal, test passed successfully!")
+
+    # clean up
+    if Path('results/test_cancer_5_nodes').exists():
+        shutil.rmtree(Path('results/test_cancer_5_nodes'))
