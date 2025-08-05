@@ -6,6 +6,8 @@ ababaf/
 GradualABA/
 py-causal/
 
+logs/
+
 # Max
 .DS_Store
 

@@ -93,8 +93,10 @@ def main(n_runs):
                                       seed=seed,
                                       sample_size=SAMPLE_SIZE)
             random_stability(seed)
+            start_mpc = time.time()
             cg, facts = get_cg_and_facts(X_s, alpha=ALPHA, indep_test=INDEP_TEST)
             facts = sorted(facts, key=lambda x: x.score, reverse=True)  # sort by score
+            elapsed_mpc = time.time() - start_mpc
 
             # run gradual aba to get the strengths
             start_model_solution = time.time()
@@ -178,7 +180,7 @@ def main(n_runs):
                         **base_info,
                         'fact_ranking_method': fact_ranking_method,
                         'model_ranking_method': model_ranking_method,
-                        'aba_elapsed': aba_elaplsed,
+                        'aba_elapsed': aba_elaplsed + elapsed_mpc,
                         'ranking_elapsed': ranking_elapsed,
                         'num_edges_est': len(best_model),
                         'best_model': best_model,

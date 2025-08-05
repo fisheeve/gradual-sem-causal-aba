@@ -319,6 +319,7 @@ def get_best_model_various_valuations(models, n_nodes, cg, alpha, indep_to_stren
 
 def get_models_from_facts(facts, seed, n_nodes, base_location='./facts.lp'):
     """ Get models from facts using the CausalABA framework.
+        NOTE: this uses the old implementation of CausalABA in ArgCausalDisco.
     Args:
         facts: list of Fact objects
         seed: int, random seed for reproducibility
