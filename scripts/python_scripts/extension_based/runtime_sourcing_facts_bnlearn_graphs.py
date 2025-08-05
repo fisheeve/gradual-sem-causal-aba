@@ -1,6 +1,8 @@
 import sys
 sys.path.insert(0, 'GradualABA/')
 sys.path.insert(0, 'ArgCausalDisco/')
+sys.path.insert(0, 'notears/')
+sys.path.insert(0, 'aspforaba/')
 
 import time
 import argparse
