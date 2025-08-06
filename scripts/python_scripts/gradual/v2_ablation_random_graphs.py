@@ -88,7 +88,7 @@ def main(n_runs):
              row['n_edges'],
              row['neighbourhood_n_nodes'],
              row['max_ct_depth'],
-             row['c_set_size'],
+             row['max_c_set_size'],
              row['search_depth'],
              row['seed'])
             for _, row in cpdag_metrics_df.iterrows()
