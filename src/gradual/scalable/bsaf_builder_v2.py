@@ -515,6 +515,9 @@ class BSAFBuilderV2:
         for argument in tqdm(self.arguments,
                              desc="Adding arguments to BSAF",
                              total=len(self.arguments)):
+            if check_memory_usage() > MEMORY_THRESHOLD_PERCENT:
+                logger.error("Memory usage exceeded threshold, stopping BSAF creation.")
+                raise MemoryUsageExceededException("Memory usage exceeded threshold, stopping BSAF creation.")
             self.bsaf.arguments.add(argument)
             if is_contrary(argument.claim):  # add attack
                 assumption = self._get_assumption_from_contrary(argument.claim)
