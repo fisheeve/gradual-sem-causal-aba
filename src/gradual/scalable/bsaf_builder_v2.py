@@ -518,7 +518,6 @@ class BSAFBuilderV2:
                              total=len(self.arguments)):
             i += 1
             if i % 1000 == 0:
-                logger.info(f"Added {i} arguments to BSAF so far.")
                 if check_memory_usage() > MEMORY_THRESHOLD_PERCENT:
                     logger.error("Memory usage exceeded threshold, stopping BSAF creation.")
                     raise MemoryUsageExceededException("Memory usage exceeded threshold, stopping BSAF creation.")
