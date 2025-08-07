@@ -22,7 +22,52 @@ DAG_NODES_MAP = {'cancer': 5,
                  'insurance': 27}
 
 
-def process_data(df, groupby_cols = ['dataset', 'n_nodes', 'n_edges', 'model']):
+
+def process_model_names_and_runtime_v1_data(v1_data, runtime_data):
+    v1_data = v1_data.copy()
+    runtime_data = runtime_data.copy()
+    v1_data['fact_sourcing_elapsed'] = v1_data.apply(
+        lambda row: runtime_data[(runtime_data['n_nodes'] == row['n_nodes']) 
+                                 & (runtime_data['n_edges'] == row['n_edges']) 
+                                 & (runtime_data['seed'] == row['seed'])]['elapsed_time'].values[0],
+        axis=1
+    )
+    v1_data['elapsed'] = (
+        v1_data['elapsed_bsaf_creation'] +
+        v1_data['elapsed_model_solution'] +
+        v1_data['aba_elapsed'] +
+        v1_data['ranking_elapsed'] +
+        v1_data['fact_sourcing_elapsed']
+    )
+
+
+
+    v1_data['model_raw'] = v1_data['fact_ranking_method'] + ' ' + v1_data['model_ranking_method']
+    v1_data = v1_data[v1_data['model_raw'].isin([
+        'original original',
+        'refined_indep_facts original',
+        'original refined_indep_facts',
+        'original arrows_sum', 
+        'original arrows_mean'
+    ])].copy()
+    v1_data['model'] = v1_data['model_raw'].map({
+        'original original': 'ABAPC (Original)',
+        'refined_indep_facts original': 'V1.1 Refined Fact Ranking',
+        'original refined_indep_facts': 'V1.2 Model Selection by Refined Fact Strengths',
+        'original arrows_sum': 'V1.3 Model Selection by Arrows Sum',
+        'original arrows_mean': 'V1.4 Model Selection by Arrows Mean'
+    })
+
+    # BSAF creation and model solution times are not applicable to original ABAPC model
+    v1_data.loc[v1_data['model'] == 'ABAPC (Original)', 'elapsed'] = (
+        v1_data.loc[v1_data['model'] == 'ABAPC (Original)', 'fact_sourcing_elapsed'] +
+        v1_data.loc[v1_data['model'] == 'ABAPC (Original)', 'aba_elapsed'] + 
+        v1_data.loc[v1_data['model'] == 'ABAPC (Original)', 'ranking_elapsed']
+    )
+    return v1_data
+
+
+def process_mean_std_sid_data(df, groupby_cols = ['dataset', 'n_nodes', 'n_edges', 'model']):
     df_grouped = df.groupby(groupby_cols, as_index=False).aggregate(
         sid_low_mean=('sid_low', 'mean'),
         sid_high_mean=('sid_high', 'mean'),
