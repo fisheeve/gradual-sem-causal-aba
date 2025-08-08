@@ -46,17 +46,17 @@ INDEP_TEST = 'fisherz'
 SAMPLE_SIZE = 5000
 RESULT_DIR = Path("./results/gradual/v2_ablation_random_graphs_7nodes")
 
-N_NODES = 7
-N_EDGES = 7  # Number of edges in the random graph
+N_NODES = 5
+N_EDGES = 5  # Number of edges in the random graph
 
-NEIGHBOURHOOD_N_NODES = [3, 4, 5, 6, 7]
-C_SET_SIZE = [0, 1, 2, 3, 4, 5]
-SEARCH_DEPTH = [4, 5, 6, 7, 8, 9, 10]
+NEIGHBOURHOOD_N_NODES = [3, 4, 5]
+C_SET_SIZE = [0, 1, 2, 3]
+SEARCH_DEPTH = [4, 5, 6]
 
 DEFAULTS = {
-    'neighbourhood_n_nodes': 7,
-    'c_set_size': 5,
-    'search_depth': 10,
+    'neighbourhood_n_nodes': 5,
+    'c_set_size': 3,
+    'search_depth': 6,
     'use_collider_arguments': True,
 }
 
@@ -164,9 +164,7 @@ def record_results(
     is_converged,
     best_model_original_ranking,
     original_ranking_I,
-    B_true,
-    cpdag_metrics_df,
-    dag_metrics_df
+    B_true
 ):
     """Record the results of the model run and update the metrics dataframes."""
     add_info = {
@@ -204,6 +202,8 @@ def record_results(
     logger.info(f"Metrics; CPDAG: {mt_cpdag}, DAG: {mt_dag}")
 
     # append to dataframes
+    cpdag_metrics_df = pd.read_csv(RESULT_DIR / 'cpdag_metrics.csv') if (RESULT_DIR / 'cpdag_metrics.csv').exists() else pd.DataFrame()
+    dag_metrics_df = pd.read_csv(RESULT_DIR / 'dag_metrics.csv') if (RESULT_DIR / 'dag_metrics.csv').exists() else pd.DataFrame()
     cpdag_metrics_df = pd.concat([cpdag_metrics_df,
                                 pd.DataFrame([mt_cpdag])],
                                 ignore_index=True)
@@ -220,9 +220,7 @@ def run_and_record_custom_neighbouthood_c_set_coll_arg(
     neighbourhood_n_nodes,
     c_set_size,
     use_collider_arguments,
-    seeds_list,
-    cpdag_metrics_df,
-    dag_metrics_df,
+    seeds_list
 ):
     """Run the model with custom neighbourhood_n_nodes, c_set_size, and use_collider_arguments.
         the search depth is fixed to the default value.
@@ -292,9 +290,7 @@ def run_and_record_custom_neighbouthood_c_set_coll_arg(
             is_converged=is_converged,
             best_model_original_ranking=best_model_original_ranking,
             original_ranking_I=original_ranking_I,
-            B_true=B_true,
-            cpdag_metrics_df=cpdag_metrics_df,
-            dag_metrics_df=dag_metrics_df)
+            B_true=B_true)
 
 
 def parse_args():
@@ -305,11 +301,10 @@ def parse_args():
 
 def main(n_runs):
     logger.info("Starting new experiment, metrics will be saved to file.")
-    # Initialize empty dataframes for metrics
-    cpdag_metrics_df = pd.DataFrame()
-    dag_metrics_df = pd.DataFrame()
-    
-    
+    # Delete existing results files if they exist
+    (RESULT_DIR / 'cpdag_metrics.csv').unlink(missing_ok=True)
+    (RESULT_DIR / 'dag_metrics.csv').unlink(missing_ok=True)
+
     random_stability(SEED)
     seeds_list = np.random.randint(0, 10000, (n_runs,)).tolist()
     
@@ -369,9 +364,7 @@ def main(n_runs):
                 is_converged=is_converged,
                 best_model_original_ranking=best_model_original_ranking,
                 original_ranking_I=original_ranking_I,
-                B_true=B_true,
-                cpdag_metrics_df=cpdag_metrics_df,
-                dag_metrics_df=dag_metrics_df)
+                B_true=B_true)
 
     # Iterate through neighbourhood_n_nodes and c_set_size
     logger.info(f"Running experiment with {n_runs} runs, seeds: {seeds_list}, iterating over neighbourhood_n_nodes: {NEIGHBOURHOOD_N_NODES}")
@@ -382,8 +375,6 @@ def main(n_runs):
                 c_set_size=DEFAULTS['c_set_size'],
                 use_collider_arguments=DEFAULTS['use_collider_arguments'],
                 seeds_list=seeds_list,
-                cpdag_metrics_df=cpdag_metrics_df,
-                dag_metrics_df=dag_metrics_df,
             )
     
     # Iterate through c_set_size
@@ -395,8 +386,6 @@ def main(n_runs):
                 c_set_size=c_set_size,
                 use_collider_arguments=DEFAULTS['use_collider_arguments'],
                 seeds_list=seeds_list,
-                cpdag_metrics_df=cpdag_metrics_df,
-                dag_metrics_df=dag_metrics_df,
             )
 
     # Iterate through use_collider_arguments
@@ -406,8 +395,6 @@ def main(n_runs):
         c_set_size=DEFAULTS['c_set_size'],
         use_collider_arguments=False,  # Opposite of default
         seeds_list=seeds_list,
-        cpdag_metrics_df=cpdag_metrics_df,
-        dag_metrics_df=dag_metrics_df,
     )
 
 
