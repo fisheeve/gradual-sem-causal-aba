@@ -46,17 +46,17 @@ INDEP_TEST = 'fisherz'
 SAMPLE_SIZE = 5000
 RESULT_DIR = Path("./results/gradual/v2_ablation_random_graphs_7nodes")
 
-N_NODES = 5
-N_EDGES = 5  # Number of edges in the random graph
+N_NODES = 7
+N_EDGES = 7  # Number of edges in the random graph
 
-NEIGHBOURHOOD_N_NODES = [3, 4, 5]
-C_SET_SIZE = [0, 1, 2, 3]
-SEARCH_DEPTH = [4, 5, 6]
+NEIGHBOURHOOD_N_NODES = [3, 4, 5, 6, 7]
+C_SET_SIZE = [0, 1, 2, 3, 4, 5]
+SEARCH_DEPTH = [4, 5, 6, 7, 8, 9, 10]
 
 DEFAULTS = {
-    'neighbourhood_n_nodes': 5,
-    'c_set_size': 3,
-    'search_depth': 6,
+    'neighbourhood_n_nodes': 7,
+    'c_set_size': 5,
+    'search_depth': 10,
     'use_collider_arguments': True,
 }
 
