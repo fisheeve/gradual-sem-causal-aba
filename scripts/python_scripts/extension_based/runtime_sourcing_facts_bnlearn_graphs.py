@@ -58,14 +58,20 @@ def main(n_runs):
             cg, facts = get_cg_and_facts(X_s, alpha=ALPHA, indep_test=INDEP_TEST)
             elapsed = time.time() - start
 
+            c_set_sizes = max([len(fact.node_set) for fact in facts])
+            max_c_set_size = max(c_set_sizes) if c_set_sizes else 0
+            min_c_set_size = min(c_set_sizes) if c_set_sizes else 0
+
+            # Record runtime and the maximum size of conditioning set of the facts
             results = pd.concat([results, pd.DataFrame({
                 'n_nodes': [n_nodes],
                 'dataset': [dataset],
                 'seed': [seed],
-                'elapsed_time': [elapsed]
+                'elapsed_time': [elapsed],
+                'max_c_set_size': max_c_set_size,
+                'min_c_set_size': min_c_set_size
             })], ignore_index=True)
             results.to_csv(RESULT_DIR / 'runtime_results.csv', index=False)
-
 
 
 if __name__ == "__main__":
