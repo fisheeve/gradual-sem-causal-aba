@@ -58,7 +58,7 @@ def main(n_runs):
             cg, facts = get_cg_and_facts(X_s, alpha=ALPHA, indep_test=INDEP_TEST)
             elapsed = time.time() - start
 
-            c_set_sizes = max([len(fact.node_set) for fact in facts])
+            c_set_sizes = [len(fact.node_set) for fact in facts]
             max_c_set_size = max(c_set_sizes) if c_set_sizes else 0
             min_c_set_size = min(c_set_sizes) if c_set_sizes else 0
 
