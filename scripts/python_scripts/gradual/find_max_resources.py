@@ -26,14 +26,15 @@ MIN_NEIGHBOURHOOD_SIZE = 3
 MIN_C_SET_SIZE = 0
 
 
-def check_resources_sufficient(use_collider_arguments,
+def check_resources_sufficient(n_nodes,
+                               use_collider_arguments,
                                neighbourhood_n_nodes,
                                c_set_size):
     start_bsaf_creation = time.time()
     memory_usage_exceeded = False
     try:
         bsaf_builder = BSAFBuilderV2(
-            n_nodes=N_NODES,
+            n_nodes=n_nodes,
             include_collider_tree_arguments=use_collider_arguments,
             neighbourhood_n_nodes=neighbourhood_n_nodes,
             max_conditioning_set_size=c_set_size)  # everything is maximal for given n_nodes, full scale
@@ -89,6 +90,7 @@ def main():
 
         # Try with collider arguments first equal to True
         memory_usage_exceeded, memory_usage, elapsed_bsaf_creation = check_resources_sufficient(
+            n_nodes=n_nodes,
             use_collider_arguments=use_collider_arguments,
             neighbourhood_n_nodes=neighbourhood_n_nodes,
             c_set_size=c_set_size)
@@ -106,6 +108,7 @@ def main():
 
         while True:
             memory_usage_exceeded, memory_usage, elapsed_bsaf_creation = check_resources_sufficient(
+                n_nodes=n_nodes,
                 use_collider_arguments=use_collider_arguments,
                 neighbourhood_n_nodes=neighbourhood_n_nodes,
                 c_set_size=c_set_size)
@@ -135,6 +138,7 @@ def main():
         c_set_size += 1
         while True:
             memory_usage_exceeded, memory_usage, elapsed_bsaf_creation = check_resources_sufficient(
+                n_nodes=n_nodes,
                 use_collider_arguments=use_collider_arguments,
                 neighbourhood_n_nodes=neighbourhood_n_nodes,
                 c_set_size=c_set_size)
