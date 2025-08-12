@@ -14,9 +14,11 @@ from src.utils.resource_utils import MemoryUsageExceededException
 import time
 import pandas as pd
 from logger import logger
+from pathlib import Path
 
 
-RESULTS_DIR = 'results/gradual/find_max_resources'
+RESULTS_DIR = Path("./results/gradual/find_max_resources")
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 N_NODES = [8, 11, 20]  # Number of nodes corresponding to datasets asia, sachs, child
 
