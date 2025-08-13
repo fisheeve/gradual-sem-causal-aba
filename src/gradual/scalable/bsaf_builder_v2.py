@@ -10,9 +10,9 @@ from GradualABA.ABAF.Rule import Rule
 from GradualABA.BSAF.BSAF import BSAF
 from itertools import combinations, permutations
 from tqdm import tqdm
-from src.utils.resource_utils import MemoryUsageExceededException, check_memory_usage
+from src.utils.resource_utils import MemoryUsageExceededException, check_memory_usage_gb
 from src.utils.utils import check_arrows_dag
-from src.constants import MEMORY_THRESHOLD_PERCENT
+from src.constants import MEMORY_THRESHOLD
 
 from logger import logger
 
@@ -346,7 +346,7 @@ class BSAFBuilderV2:
         for path in tqdm(paths,
                          desc=f"Finding active paths for dummy nodes {node1} and {node2}",
                          total=len(paths)):
-            if check_memory_usage() > MEMORY_THRESHOLD_PERCENT:
+            if check_memory_usage_gb() > MEMORY_THRESHOLD:
                 logger.error("Memory usage exceeded threshold, stopping path generation.")
                 raise MemoryUsageExceededException("Memory usage exceeded threshold, stopping path generation.")
             for conditioning_set_size in range(self.max_conditioning_set_size + 1):
@@ -394,7 +394,7 @@ class BSAFBuilderV2:
         for node1, node2 in tqdm(combinations(range(self.n_nodes), 2),
                                  desc="Adding active path assumptions and arguments",
                                  total=self.n_nodes * (self.n_nodes - 1) // 2):
-            if check_memory_usage() > MEMORY_THRESHOLD_PERCENT:
+            if check_memory_usage_gb() > MEMORY_THRESHOLD:
                 logger.error("Memory usage exceeded threshold, stopping active path generation.")
                 raise MemoryUsageExceededException("Memory usage exceeded threshold, stopping active path generation.")
             if node1 > node2:  # Swap nodes to ensure node1 < node2 for symmetry
@@ -449,7 +449,7 @@ class BSAFBuilderV2:
         for node1, node2 in tqdm(combinations(range(self.n_nodes), 2),
                                  desc="Adding active path assumptions and arguments without collider trees",
                                  total=self.n_nodes * (self.n_nodes - 1) // 2):
-            if check_memory_usage() > MEMORY_THRESHOLD_PERCENT:
+            if check_memory_usage_gb() > MEMORY_THRESHOLD:
                 logger.error("Memory usage exceeded threshold, stopping active path generation.")
                 raise MemoryUsageExceededException("Memory usage exceeded threshold, stopping active path generation.")
 
@@ -518,7 +518,7 @@ class BSAFBuilderV2:
                              total=len(self.arguments)):
             i += 1
             if i % 1000 == 0:
-                if check_memory_usage() > MEMORY_THRESHOLD_PERCENT:
+                if check_memory_usage_gb() > MEMORY_THRESHOLD:
                     logger.error("Memory usage exceeded threshold, stopping BSAF creation.")
                     raise MemoryUsageExceededException("Memory usage exceeded threshold, stopping BSAF creation.")
 

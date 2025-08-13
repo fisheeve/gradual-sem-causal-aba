@@ -9,7 +9,7 @@ This means that it first sets the collider arguments to True,
 then finds greatest neighbourhood size with c-set size 0,
 then finds greatest c-set size with neighbourhood size determined above.
 """
-from src.gradual.scalable.bsaf_builder_v2 import BSAFBuilderV2, check_memory_usage
+from src.gradual.scalable.bsaf_builder_v2 import BSAFBuilderV2, check_memory_usage_gb
 from src.utils.resource_utils import MemoryUsageExceededException
 import time
 import pandas as pd
@@ -39,11 +39,11 @@ def check_resources_sufficient(n_nodes,
             neighbourhood_n_nodes=neighbourhood_n_nodes,
             max_conditioning_set_size=c_set_size)  # everything is maximal for given n_nodes, full scale
         bsaf = bsaf_builder.create_bsaf()
-        memory_usage = check_memory_usage()
+        memory_usage = check_memory_usage_gb()
     except MemoryUsageExceededException as e:
         logger.info(f"neighbourhood_n_nodes={neighbourhood_n_nodes}, "
                     f"c_set_size={c_set_size}. Error: {e}")
-        memory_usage = check_memory_usage()
+        memory_usage = check_memory_usage_gb()
         memory_usage_exceeded = True
 
     elapsed_bsaf_creation = time.time() - start_bsaf_creation
@@ -107,6 +107,12 @@ def main():
             neighbourhood_n_nodes += 1
 
         while True:
+            if neighbourhood_n_nodes > n_nodes:
+                logger.info(f"Neighbourhood size {neighbourhood_n_nodes} exceeds number of nodes {n_nodes}. "
+                            f"Breaking loop.")
+                neighbourhood_n_nodes = n_nodes
+                break
+
             memory_usage_exceeded, memory_usage, elapsed_bsaf_creation = check_resources_sufficient(
                 n_nodes=n_nodes,
                 use_collider_arguments=use_collider_arguments,
@@ -137,6 +143,12 @@ def main():
         # Now try with the maximum neighbourhood size found, but increase c_set_size
         c_set_size += 1
         while True:
+            if c_set_size > n_nodes -2:
+                logger.info(f"Conditioning set size {c_set_size} exceeds number of nodes {n_nodes}. "
+                            f"Breaking loop.")
+                c_set_size = n_nodes - 2
+                break
+
             memory_usage_exceeded, memory_usage, elapsed_bsaf_creation = check_resources_sufficient(
                 n_nodes=n_nodes,
                 use_collider_arguments=use_collider_arguments,

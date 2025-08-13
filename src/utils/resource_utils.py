@@ -14,10 +14,10 @@ class TimeoutException(Exception):
     pass
 
 
-def check_memory_usage():
+def check_memory_usage_gb():
     """Check the current memory usage of the system."""
     memory = psutil.virtual_memory()
-    return memory.percent
+    return memory.used / (1024 ** 3)  # Convert bytes to gigabytes
 
 
 def timeout(seconds):
