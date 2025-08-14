@@ -2,6 +2,7 @@
 import threading
 import functools
 import psutil
+import os
 
 
 class MemoryUsageExceededException(Exception):
@@ -16,8 +17,8 @@ class TimeoutException(Exception):
 
 def check_memory_usage_gb():
     """Check the current memory usage of the system."""
-    memory = psutil.virtual_memory()
-    return memory.used / (1024 ** 3)  # Convert bytes to gigabytes
+    rss = psutil.Process(os.getpid()).memory_info().rss
+    return rss / (1024 ** 3)  # Convert bytes to gigabytes
 
 
 def timeout(seconds):
