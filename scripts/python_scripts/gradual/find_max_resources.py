@@ -188,16 +188,9 @@ def main():
                         f"use_collider_arguments={use_collider_arguments}.")
 
             # If neighbourhood size is less than minimum, then no resource is enough
-            if max_neighbourhood_n_nodes < MIN_NEIGHBOURHOOD_SIZE and not use_collider_arguments:
-                logger.info(f"Memory usage exceeded for minimum resource parameters for {n_nodes} nodes."
-                            "Trying extra restricted parameters.")
-                data, memory_usage_exceeded, memory_usage, elapsed_bsaf_creation = check_resources_sufficient(
-                    data=data,
-                    path=path,
-                    n_nodes=n_nodes,
-                    use_collider_arguments=False,
-                    neighbourhood_n_nodes=2,
-                    c_set_size=0)
+            if max_neighbourhood_n_nodes < MIN_NEIGHBOURHOOD_SIZE:
+                logger.info(f"Memory usage exceeded for minimum resource parameters for {n_nodes} nodes.")
+                continue
             else:
                 # Find maximum c_set_size for each neighbourhood size
                 for neighbourhood_n_nodes in range(MIN_NEIGHBOURHOOD_SIZE, max_neighbourhood_n_nodes + 1):
