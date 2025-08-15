@@ -15,6 +15,16 @@ import time
 import pandas as pd
 from logger import logger
 from pathlib import Path
+import ctypes
+import gc
+
+
+def free_memory():
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        pass
 
 
 RESULTS_DIR = Path("./results/gradual/find_max_resources")
@@ -97,6 +107,7 @@ def find_max_c_set_size(n_nodes,
     """
     c_set_size = min_c_set_size
     while True:
+        free_memory()  # Free memory before each iteration
         if c_set_size > n_nodes - 2:
             logger.info(f"Conditioning set size {c_set_size} exceeds number of nodes {n_nodes}. "
                         f"Breaking loop.")
@@ -137,6 +148,7 @@ def find_max_neighbourhood_size(n_nodes,
     """
     neighbourhood_n_nodes = min_neighbourhood_n_nodes
     while True:
+        free_memory()  # Free memory before each iteration
         if neighbourhood_n_nodes > n_nodes:
             logger.info(f"Neighbourhood size {neighbourhood_n_nodes} exceeds number of nodes {n_nodes}. "
                         f"Breaking loop.")
@@ -186,7 +198,7 @@ def main():
                 data=data)
             logger.info(f"Maximum neighbourhood_n_nodes found: {max_neighbourhood_n_nodes} for "
                         f"use_collider_arguments={use_collider_arguments}.")
-
+            free_memory()
             # If neighbourhood size is less than minimum, then no resource is enough
             if max_neighbourhood_n_nodes < MIN_NEIGHBOURHOOD_SIZE:
                 logger.info(f"Memory usage exceeded for minimum resource parameters for {n_nodes} nodes.")
@@ -206,7 +218,7 @@ def main():
                         data=data)
                     logger.info(f"Maximum c_set_size found: {max_c_set_size} for neighbourhood_n_nodes={neighbourhood_n_nodes}, "
                                 f"use_collider_arguments={use_collider_arguments}.")
-
+                    free_memory()
         logger.info(f"Completed processing for {n_nodes} nodes\n")
 
 
