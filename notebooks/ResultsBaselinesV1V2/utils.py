@@ -73,11 +73,25 @@ def process_mean_std_sid_data(df, groupby_cols = ['dataset', 'n_nodes', 'n_edges
         sid_high_mean=('sid_high', 'mean'),
         sid_low_std=('sid_low', 'std'),
         sid_high_std=('sid_high', 'std'),
+        precision_mean=('precision', 'mean'),
+        precision_std=('precision', 'std'),
+        recall_mean=('recall', 'mean'),
+        recall_std=('recall', 'std'),
+        f1_mean=('F1', 'mean'),
+        f1_std=('F1', 'std'),
+        shd_mean=('shd', 'mean'),
+        shd_std=('shd', 'std'),
+        nnz_mean=('nnz', 'mean'),
+        nnz_std=('nnz', 'std'),
     )
-    df_grouped['p_SID_low_mean'] = df_grouped['sid_low_mean'] / df_grouped['n_edges']
-    df_grouped['p_SID_high_mean'] = df_grouped['sid_high_mean'] / df_grouped['n_edges']
-    df_grouped['p_SID_low_std'] = df_grouped['sid_low_std'] / df_grouped['n_edges']
-    df_grouped['p_SID_high_std'] = df_grouped['sid_high_std'] / df_grouped['n_edges']
+    df_grouped['n_sid_low_mean'] = df_grouped['sid_low_mean'] / df_grouped['n_edges']
+    df_grouped['n_sid_high_mean'] = df_grouped['sid_high_mean'] / df_grouped['n_edges']
+    df_grouped['n_sid_low_std'] = df_grouped['sid_low_std'] / df_grouped['n_edges']
+    df_grouped['n_sid_high_std'] = df_grouped['sid_high_std'] / df_grouped['n_edges']
+
+    df_grouped['n_shd_mean'] = df_grouped['shd_mean'] / df_grouped['n_edges']
+    df_grouped['n_shd_std'] = df_grouped['shd_std'] / df_grouped['n_edges']
+
     return df_grouped
 
 
@@ -130,8 +144,11 @@ def plot_runtime(df,
 
 
 def double_bar_chart_plotly(all_sum, names_dict, colors_dict, 
-                            methods=['Random', 'FGS', 'NOTEARS-MLP', 'Shapley-PC', 'ABAPC (Existing)', 'ABAPC (ASPforABA)'],
-                            range_y1=None, range_y2=None, font_size=20,
+                            vars_to_plot=['n_sid_low', 'n_sid_high'],
+                            names=['Best', 'Worst'],
+                            labels=['Normalised SID = SID / Number of Edges in DAG', ''],
+                            methods=['Random', 'FGS', 'NOTEARS-MLP', 'ABAPC (Existing)', 'ABAPC (ASPforABA)'],
+                            range_y1=[0, 1], range_y2=[0, 1], font_size=20,
                             save_figs=False, output_name="bar_chart.html", debug=False,
                             dist_between_lines=0.1565,
                             intra_dis=0.112,
@@ -143,10 +160,9 @@ def double_bar_chart_plotly(all_sum, names_dict, colors_dict,
                             height=700):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    vars_to_plot = ['p_SID_low','p_SID_high']
     for n, var_to_plot in enumerate(vars_to_plot):
         for m, method in enumerate(methods):
-            trace_name = 'True Graph Size' if var_to_plot=='nnz' and method=='Random' else method#+' '+var_to_plot
+            trace_name = method
             fig.add_trace(go.Bar(x=all_sum[(all_sum.model==method)]['dataset'], 
                                 yaxis=f"y{n+1}",
                                 offsetgroup=m+len(methods)*n+(1*n),
@@ -169,7 +185,7 @@ def double_bar_chart_plotly(all_sum, names_dict, colors_dict,
                                     showlegend=False
                                     )
                                     )
-    second_ticks = False if all('SID' in var for var in vars_to_plot) else True
+    second_ticks = False if len(labels[1]) < 1 else True
     # Change the bar mode
     fig.update_layout(barmode='group',
                         bargap=0.15, # gap between bars of adjacent location coordinates.
@@ -207,39 +223,13 @@ def double_bar_chart_plotly(all_sum, names_dict, colors_dict,
                     )
         )
     
-    for n, var_to_plot in enumerate(vars_to_plot):
-        if vars_to_plot == ['precision', 'recall']:
-            if range_y1 is None:
-                range_y = [0, 1.3]
-            else:
-                range_y = range_y1
-        elif vars_to_plot == ['fdr', 'tpr']:
-            range_y = [0, 1]
-        elif 'shd' in var_to_plot or 'SID' in var_to_plot:
-            if range_y1 is None and range_y2 is None:
-                if 'high' in var_to_plot:
-                    range_y = [0, max(all_sum['p_SID_high_mean'])+.3]
-                elif 'low' in var_to_plot:
-                    range_y = [0, max(all_sum['p_SID_low_mean'])+.3]
-                else:
-                    range_y = [0, 2] if n==0 else [0, max(all_sum['p_SID_mean'])+.3]
-            else:
-                range_y = range_y1 if n==0 else range_y2
-        if 'n_' in var_to_plot or 'p_' in var_to_plot:
-            orig_y = var_to_plot.replace('n_','').replace('p_','').replace('_low','').replace('_high','').upper()
-            fig.update_yaxes(title={'text':f'Normalised {orig_y}','font':{'size':font_size}}, secondary_y=n==1, range=range_y)
-            if second_ticks == False:
-                fig.update_yaxes(title={'text':'','font':{'size':font_size}}, secondary_y=True, range=range_y, showticklabels=False)
-        elif var_to_plot=='nnz':
-            orig_y = 'Number of Edges in DAG'
-            fig.update_yaxes(title={'text':f'{orig_y}','font':{'size':font_size}}, secondary_y=n==1, range=range_y)
-        else:
-            fig.update_yaxes(title={'text':f'{var_to_plot.title()}','font':{'size':font_size}}, secondary_y=n==1, range=range_y)
-
+    for n, (var_to_plot, label, y_range) in enumerate(zip(vars_to_plot, labels, [range_y1, range_y2])):
+        fig.update_yaxes(title={'text':f'{label}','font':{'size':font_size}}, secondary_y=n==1, range=y_range)
+        if second_ticks == False:
+            fig.update_yaxes(title={'text':'','font':{'size':font_size}}, secondary_y=True, range=y_range, showticklabels=False)
     
 
-    name1 = 'Best'
-    name2 = 'Worst'
+    name1, name2 = names
     
 
     n_x_cat = len(all_sum.dataset.unique())
