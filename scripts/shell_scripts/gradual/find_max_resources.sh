@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -l walltime=12:00:00
+#PBS -l walltime=48:00:00
 #PBS -l select=1:ncpus=8:mem=128gb:cpu_type=rome
 #PBS -N find_max_resources
 

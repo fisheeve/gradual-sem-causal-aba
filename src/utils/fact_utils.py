@@ -1,4 +1,6 @@
 from src.utils.enums import RelationEnum, Fact
+import networkx as nx
+import pandas as pd
 
 
 def parse_fact_line(line):
@@ -61,3 +63,20 @@ def get_fact_location(facts, base_location='./facts.lp'):
             f.write(f"{s[4]} I={s[5]}, NA\n")
         
     return facts_location
+
+
+def check_if_fact_is_true(fact, B_true):
+    """
+    Check if the fact is true in the true graph B_true.
+    """
+    G_true = nx.DiGraph(pd.DataFrame(B_true,
+                                     columns=[f"X{i+1}" for i in range(B_true.shape[1])],
+                                     index=[f"X{i+1}" for i in range(B_true.shape[1])]
+                                     )
+                        )
+    x, y, s = fact.node1, fact.node2, fact.node_set
+    s_text = [f"X{r+1}" for r in s]
+    is_d_separated = nx.algorithms.d_separated(G_true, {f"X{x+1}"}, {f"X{y+1}"}, set(s_text))
+    is_indep = fact.relation == RelationEnum.indep
+
+    return is_d_separated == is_indep

@@ -10,12 +10,14 @@ import numpy as np
 from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
+import json
 
 from logger import logger
 
 from src.abapc import get_cg_and_facts
 from ArgCausalDisco.utils.helpers import random_stability
 from src.utils.bn_utils import get_dataset
+from src.utils.fact_utils import check_if_fact_is_true
 
 
 SEED = 2024
@@ -50,7 +52,7 @@ def main(n_runs):
         seeds_list = np.random.randint(0, 10000, (n_runs,)).tolist()
 
         for seed in tqdm(seeds_list, desc=f"Running dataset {dataset} with {n_runs} seeds"):
-            X_s, _ = get_dataset(dataset,
+            X_s, B_true = get_dataset(dataset,
                                  seed=seed,
                                  sample_size=SAMPLE_SIZE)
             random_stability(seed)
@@ -58,18 +60,24 @@ def main(n_runs):
             cg, facts = get_cg_and_facts(X_s, alpha=ALPHA, indep_test=INDEP_TEST)
             elapsed = time.time() - start
 
-            c_set_sizes = [len(fact.node_set) for fact in facts]
-            max_c_set_size = max(c_set_sizes) if c_set_sizes else 0
-            min_c_set_size = min(c_set_sizes) if c_set_sizes else 0
-
+            fact_metadata = []
+            for fact in facts:
+                is_true = check_if_fact_is_true(fact, B_true)
+                fact_metadata.append({'is_true': is_true,
+                                      'node1': int(fact.node1),
+                                      'node2': int(fact.node2),
+                                      'node_set': sorted([int(i) for i in fact.node_set]),
+                                      'relation': fact.relation.value,
+                                      'score': fact.score})
+            fact_metadata_json = json.dumps(fact_metadata)
             # Record runtime and the maximum size of conditioning set of the facts
             results = pd.concat([results, pd.DataFrame({
                 'n_nodes': [n_nodes],
                 'dataset': [dataset],
                 'seed': [seed],
                 'elapsed_time': [elapsed],
-                'max_c_set_size': max_c_set_size,
-                'min_c_set_size': min_c_set_size
+                'fact_metadata': [fact_metadata_json],
+                'true_dag': [json.dumps(B_true.tolist())],
             })], ignore_index=True)
             results.to_csv(RESULT_DIR / 'runtime_results.csv', index=False)
 
@@ -78,5 +86,5 @@ if __name__ == "__main__":
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
     args = parse_args()
     main(args.n_runs)
-    print("Runtime sourcing facts experiment completed successfully!")
-    print(f"Results saved to {RESULT_DIR / 'runtime_results.csv'}")
+    logger.info("Runtime sourcing facts experiment completed successfully!")
+    logger.info(f"Results saved to {RESULT_DIR / 'runtime_results.csv'}")
