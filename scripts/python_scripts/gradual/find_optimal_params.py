@@ -10,7 +10,7 @@ sys.path.insert(0, 'ArgCausalDisco/')
 sys.path.insert(0, 'notears/')
 
 from src.utils.utils import check_arrows_dag, get_matrix_from_arrow_set, parse_arrow
-from src.utils.resource_utils import MemoryUsageExceededException, TimeoutException, timeout
+from src.utils.resource_utils import TimeoutException, timeout
 from src.utils.metrics import get_metrics
 from src.utils.gen_random_nx import generate_random_bn_data
 from src.utils.configure_r import configure_r
@@ -41,7 +41,7 @@ INDEP_TEST = 'fisherz'
 SAMPLE_SIZE = 5000
 SEED = 2024
 
-TIMEOUT = 10 * 60  # 10 minutes
+TIMEOUT = 60 * 60  # 1 hour in seconds
 
 
 
@@ -145,8 +145,26 @@ def record_results(
     dag_metrics_df.to_csv(result_dir / 'dag_metrics.csv', index=False)
 
 
+def get_facts_and_graphs_for_seed(seed, n_nodes, n_edges):
+    X_s, B_true = generate_random_bn_data(
+            n_nodes=n_nodes,
+            n_edges=n_edges,
+            n_samples=SAMPLE_SIZE,
+            seed=seed,
+            standardise=True
+        )
+    random_stability(seed)
+    start_fact_sourcing = time.time()
+    cg, facts = get_cg_and_facts(X_s, alpha=ALPHA, indep_test=INDEP_TEST)
+    facts = sorted(facts, key=lambda x: x.score, reverse=True)  # sort by score
+    elapsed_fact_sourcing = time.time() - start_fact_sourcing
+    return X_s, B_true, cg, facts, elapsed_fact_sourcing
+
+
 def get_sorted_arrows(seed, 
-                      X_s, 
+                      facts,
+                      elapsed_fact_sourcing,
+                      cg,
                       assumptions_dict, 
                       bsaf,  
                       n_nodes):
@@ -171,10 +189,6 @@ def get_sorted_arrows(seed,
         Or None for all outputs if the model run times out.
     """
     random_stability(seed)
-    start_fact_sourcing = time.time()
-    cg, facts = get_cg_and_facts(X_s, alpha=ALPHA, indep_test=INDEP_TEST)
-    facts = sorted(facts, key=lambda x: x.score, reverse=True)  # sort by score
-    elapsed_fact_sourcing = time.time() - start_fact_sourcing
 
     # run gradual aba to get the strengths
     start_model_solution = time.time()
@@ -222,6 +236,16 @@ def main(n_nodes,
          search_depth,
          n_runs,
          result_dir):
+   
+    random_stability(SEED)
+    seeds_list = np.random.randint(0, 10000, (n_runs,)).tolist()
+
+    # get all facts and causal graphs for the seeds
+    facts_and_cg = dict()
+    for seed in tqdm(seeds_list):
+        X_s, B_true, cg, facts, elapsed_fact_sourcing = get_facts_and_graphs_for_seed(seed, n_nodes, n_edges)
+        facts_and_cg[seed] = (X_s, B_true, cg, facts, elapsed_fact_sourcing)
+
     start_bsaf_creation = time.time()
     bsaf_builder = BSAFBuilderV2(
         n_nodes=n_nodes,
@@ -232,24 +256,17 @@ def main(n_nodes,
     assumptions_dict = bsaf_builder.name_to_assumption
     elapsed_bsaf_creation = time.time() - start_bsaf_creation
 
-    random_stability(SEED)
-    seeds_list = np.random.randint(0, 10000, (n_runs,)).tolist()
-
     for seed in tqdm(seeds_list):
-        X_s, B_true = generate_random_bn_data(
-            n_nodes=n_nodes,
-            n_edges=n_edges,
-            n_samples=SAMPLE_SIZE,
-            seed=seed,
-            standardise=True
-        )
+        X_s, B_true, cg, facts, elapsed_fact_sourcing = facts_and_cg[seed]
         (elapsed_fact_sourcing, 
         elapsed_model_solution, 
         is_converged, 
         score_original_prefilled, 
         sorted_arrows) = get_sorted_arrows(
             seed=seed,
-            X_s=X_s,
+            facts=facts,
+            elapsed_fact_sourcing=elapsed_fact_sourcing,
+            cg=cg,
             assumptions_dict=assumptions_dict,
             bsaf=bsaf,
             n_nodes=n_nodes

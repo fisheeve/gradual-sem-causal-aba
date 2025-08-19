@@ -18,7 +18,7 @@ python scripts/python_scripts/gradual/find_optimal_params.py \
     --c-set-size 0 \
     --search-depth 10 \
     --use-collider-arguments "true" \
-    --n-runs 20
+    --n-runs 10
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to run the find_optimal_params experiment script."
