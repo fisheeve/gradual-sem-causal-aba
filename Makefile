@@ -38,6 +38,8 @@ install: clean
 	@echo "[TODO: fix this somehow] Applying custom changes to aspforaba sub-repo..."
 	cd aspforaba && git apply ../aspforaba.patch
 
+	cd ArgCausalDisco && git reset --hard 579a1c95f576ecb53d97b0c62d4ceebb90368189
+
 	@echo "Installing additional dependencies..."
 	R_INTERACTIVE=FALSE R_PAPERSIZE=letter PAGER=cat R_OPTS="--no-save --no-restore --quiet" \
 	$(RPATH) -e 'install.packages("BiocManager", repos="https://cloud.r-project.org", lib="$(R_LIB_DIR)")'
