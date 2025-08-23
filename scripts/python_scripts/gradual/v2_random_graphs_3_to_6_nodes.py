@@ -41,7 +41,7 @@ INDEP_TEST = 'fisherz'
 SAMPLE_SIZE = 5000
 RESULT_DIR = Path("./results/gradual/v2_random_graphs_3_to_6_nodes")
 
-N_NODES = [3, 4, 5, 6]
+N_NODES = [3, 4, 5, 6, 7]
 SEED = 2024
 TIMEOUT = 5 * 60  # 5 minutes
 SEARCH_DEPTH = 10
