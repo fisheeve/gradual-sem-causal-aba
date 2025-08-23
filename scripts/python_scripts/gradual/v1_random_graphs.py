@@ -52,7 +52,7 @@ DATASETS = ['cancer',
             'earthquake',
             'survey']
 
-N_NODES = [3, 4, 5, 6]
+N_NODES = [3, 4, 5, 6, 7]
 
 SEED = 2024
 
