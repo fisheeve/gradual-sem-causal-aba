@@ -18,9 +18,9 @@ import time
 ALPHA = 0.01
 INDEP_TEST = 'fisherz'
 EDGE_NODE_RATIO = 1
-N_NODES = [3, 4, 5, 6, 
-        #    7, 8, 9, 10
-           ]
+N_NODES = [3, 4, 5, 6, 7,
+        #    8, 9, 10
+    ]
 
 
 def parse_args():
