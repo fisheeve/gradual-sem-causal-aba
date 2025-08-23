@@ -97,7 +97,7 @@ def main(n_runs=50, sample_size=5000, device=0):
     for dataset_name in tqdm(dataset_list, desc="tqdm Datasets"):
         for method in tqdm(model_list, desc="tqdm Methods"):
 
-            if method == 'abapc' and dataset_name in ['child', 'insurance']:
+            if method == 'abapc' and dataset_name in ['sachs', 'child', 'insurance']:
                 logger.info(f"Skipping {method} on {dataset_name} as it is not applicable.")
                 continue
 
