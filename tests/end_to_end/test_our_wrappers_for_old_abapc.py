@@ -46,6 +46,7 @@ def revert_diff():
     os.system(f'cd {Path(__file__).resolve().parents[2] / 'ArgCausalDisco'} && git checkout .')
 
 
+@pytest.mark.skip(reason="Skipping test - please it run with python tests/end_to_end/test_our_wrappers_for_old_abapc.py instead")
 @pytest.mark.parametrize("seed", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 def test_our_wrappers_yield_same_model_and_ranking_as_old_causalaba_interface(seed):
     apply_diff()
