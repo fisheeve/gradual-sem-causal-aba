@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -l walltime=4:00:00
-#PBS -l select=1:ncpus=16:mem=64gb:cpu_type=rome
+#PBS -l select=1:ncpus=16:mem=128gb:cpu_type=rome
 #PBS -N v1_random_graphs
 
 # Setup env variables and the python venv
