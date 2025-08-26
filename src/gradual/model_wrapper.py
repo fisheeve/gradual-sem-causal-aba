@@ -124,7 +124,7 @@ class ModelWrapper:
         self.arrow_strengths = {
             asm_name: strength_evo[-1][1]
             for asm_name, strength_evo in graph_data.items()
-            if asm_name.startswith(('arr', 'noe'))
+            if asm_name.startswith('arr')
         }
         self.indep_strengths = {
             asm_name: strength_evo[-1][1]
