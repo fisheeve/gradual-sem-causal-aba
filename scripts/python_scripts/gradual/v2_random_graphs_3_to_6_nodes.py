@@ -31,18 +31,15 @@ from src.utils.gen_random_nx import generate_random_bn_data
 from src.utils.metrics import get_metrics
 from src.utils.resource_utils import MemoryUsageExceededException
 from src.utils.utils import check_arrows_dag, get_matrix_from_arrow_set, parse_arrow
+from src.constants import ALPHA, INDEP_TEST, SAMPLE_SIZE, SEED
 
 
 configure_r()
 
-ALPHA = 0.01
-INDEP_TEST = 'fisherz'
 
-SAMPLE_SIZE = 5000
 RESULT_DIR = Path("./results/gradual/v2_random_graphs_3_to_6_nodes")
 
 N_NODES = [3, 4, 5, 6, 7]
-SEED = 2024
 TIMEOUT = 30 * 60  # 5 minutes
 SEARCH_DEPTH = 10
 

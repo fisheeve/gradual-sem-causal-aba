@@ -13,6 +13,7 @@ import numpy as np
 from tqdm import tqdm
 import pandas as pd
 import time
+from src.constants import ALPHA, INDEP_TEST, SAMPLE_SIZE, SEED
 
 
 ALPHA = 0.01
@@ -24,7 +25,7 @@ N_NODES = [3, 4, 5, 6, 7, 8, 9, 10]
 def parse_args():
     parser = ArgumentParser(description="Compare ABAPC implementations on random DAGs")
     parser.add_argument('--n-runs', type=int, default=50, help='Number of runs for the experiment')
-    parser.add_argument('--sample-size', type=int, default=5000, help='Sample size for the random DAGs')
+    parser.add_argument('--sample-size', type=int, default=SAMPLE_SIZE, help='Sample size for the random DAGs')
     parser.add_argument('--output-dir', type=str, default='results/extension_based_semantics', help='Directory to save results')
     return parser.parse_args()
 
@@ -37,7 +38,7 @@ def main():
 
     logger_setup(str(out_path / 'log_compare_abapc.log'))
 
-    random_stability(2025)
+    random_stability(SEED)
     seeds_list = np.random.randint(0, 10000, (args.n_runs,)).tolist()
     df = pd.DataFrame(columns=['n_nodes', 'n_edges', 'seed', 'pure_abapc_elapsed', 'old_elapsed'])
 

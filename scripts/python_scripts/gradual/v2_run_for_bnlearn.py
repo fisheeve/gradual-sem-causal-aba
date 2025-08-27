@@ -29,15 +29,10 @@ import time
 import pandas as pd
 import numpy as np
 import argparse
+from src.constants import ALPHA, INDEP_TEST, SAMPLE_SIZE, SEED
 
 
 configure_r()
-
-ALPHA = 0.01
-INDEP_TEST = 'fisherz'
-
-SAMPLE_SIZE = 5000
-SEED = 2024
 
 
 def parse_args():

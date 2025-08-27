@@ -20,3 +20,9 @@ DAG_EDGES_MAP = {'cancer': 4,
                  'sachs': 17,
                  'child': 25,
                  'insurance': 52}
+
+
+ALPHA = 0.01
+INDEP_TEST = 'fisherz'
+SAMPLE_SIZE = 5000
+SEED = 2024

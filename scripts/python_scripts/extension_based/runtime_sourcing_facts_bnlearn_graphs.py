@@ -18,12 +18,8 @@ from src.abapc import get_cg_and_facts
 from ArgCausalDisco.utils.helpers import random_stability
 from src.utils.bn_utils import get_dataset
 from src.utils.fact_utils import check_if_fact_is_true
+from src.constants import ALPHA, INDEP_TEST, SAMPLE_SIZE, SEED
 
-
-SEED = 2024
-ALPHA = 0.01
-INDEP_TEST = 'fisherz'
-SAMPLE_SIZE = 5000
 
 RESULT_DIR = Path("./results/existing/runtime_sourcing_facts_bnlearn_graphs")
 DATASETS = ['cancer', 'earthquake', 'survey', 'asia', 'sachs', 'child', 'insurance']

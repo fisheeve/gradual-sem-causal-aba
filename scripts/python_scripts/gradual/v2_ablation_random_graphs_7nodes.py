@@ -36,14 +36,11 @@ from src.utils.gen_random_nx import generate_random_bn_data
 from src.utils.metrics import get_metrics
 from src.utils.resource_utils import MemoryUsageExceededException, TimeoutException, timeout
 from src.utils.utils import check_arrows_dag, get_matrix_from_arrow_set, parse_arrow
+from src.constants import ALPHA, INDEP_TEST, SAMPLE_SIZE, SEED
 
 
 configure_r()
 
-ALPHA = 0.01
-INDEP_TEST = 'fisherz'
-
-SAMPLE_SIZE = 5000
 RESULT_DIR = Path("./results/gradual/v2_ablation_random_graphs_7nodes")
 
 N_NODES = 7
@@ -59,8 +56,6 @@ DEFAULTS = {
     'search_depth': 10,
     'use_collider_arguments': True,
 }
-
-SEED = 2024
 
 TIMEOUT = 10 * 60  # 10 minutes
 

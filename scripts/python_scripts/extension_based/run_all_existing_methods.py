@@ -24,9 +24,9 @@ from ArgCausalDisco.utils.data_utils import simulate_dag
 from src.utils.bn_utils import get_dataset
 from src.utils.configure_r import configure_r
 from logger import logger
+from src.constants import ALPHA, INDEP_TEST, SAMPLE_SIZE, SEED
 
-ALPHA = 0.01
-INDEP_TEST = 'fisherz'
+
 RESULTS_DIR = Path('results/existing/bnlearn_graphs/')
 RESULTS_DIR.mkdir(exist_ok=True, parents=True)
 LOAD_SAVED = False
@@ -65,12 +65,12 @@ names_dict = {'pc': 'PC',
 def parse_args():
     parser = ArgumentParser(description="Run causal discovery methods on bnlearn datasets")
     parser.add_argument('--n-runs', type=int, default=50, help='Number of runs for each method')
-    parser.add_argument('--sample-size', type=int, default=5000, help='Sample size for each run')
+    parser.add_argument('--sample-size', type=int, default=SAMPLE_SIZE, help='Sample size for each run')
     parser.add_argument('--device', type=int, default=0, help='Device to use for computation')
     return parser.parse_args()
 
 
-def main(n_runs=50, sample_size=5000, device=0):
+def main(n_runs=50, sample_size=SAMPLE_SIZE, device=0):
     # configure R settings for the cdt package
     configure_r()
     version = f'bnlearn_{n_runs}rep'
@@ -101,7 +101,7 @@ def main(n_runs=50, sample_size=5000, device=0):
                 logger.info(f"Skipping {method} on {dataset_name} as it is not applicable.")
                 continue
 
-            random_stability(2024)
+            random_stability(SEED)
             seeds_list = np.random.randint(0, 10000, (n_runs,)).tolist()
             logger.info(f"Running {method} on {dataset_name} for {n_runs} times with seeds {seeds_list}")
 

@@ -30,19 +30,13 @@ from ArgCausalDisco.utils.helpers import random_stability
 
 from src.abapc import get_models_from_facts
 from src.utils.metrics import get_metrics
+from src.constants import ALPHA, INDEP_TEST, SAMPLE_SIZE, SEED
 
 
 configure_r()
 
-ALPHA = 0.01
-INDEP_TEST = 'fisherz'
-
-SAMPLE_SIZE = 5000
 RESULT_DIR = Path("./results/existing/abapc_old_but_faster_on_random/")
-
 N_NODES = [3, 4, 5, 6, 7]
-
-SEED = 2024
 
 
 def parse_args():

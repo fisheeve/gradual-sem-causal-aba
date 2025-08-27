@@ -16,12 +16,8 @@ from src.abapc import get_cg_and_facts
 from src.utils.gen_random_nx import generate_random_bn_data
 from ArgCausalDisco.utils.helpers import random_stability
 from src.utils.fact_utils import check_if_fact_is_true
+from src.constants import ALPHA, INDEP_TEST, SAMPLE_SIZE, SEED
 
-
-SEED = 2024
-ALPHA = 0.01
-INDEP_TEST = 'fisherz'
-SAMPLE_SIZE = 5000
 
 RESULT_DIR = Path("./results/existing/runtime_sourcing_facts_random_graphs")
 N_NODES = [3, 4, 5, 6, 7, 8, 10, 15, 20]

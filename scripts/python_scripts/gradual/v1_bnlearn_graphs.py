@@ -38,14 +38,11 @@ from GradualABA.semantics.modular.LinearInfluence import LinearInfluence
 from GradualABA.semantics.modular.SetMinAggregation import SetMinAggregation
 from src.abapc import get_models_from_facts
 from src.utils.metrics import get_metrics
+from src.constants import ALPHA, INDEP_TEST, SAMPLE_SIZE, SEED
 
 
 configure_r()
 
-ALPHA = 0.01
-INDEP_TEST = 'fisherz'
-
-SAMPLE_SIZE = 5000
 RESULT_DIR = Path("./results/gradual/v1_bnlearn_graphs")
 
 DATASETS = ['cancer',
@@ -56,7 +53,6 @@ N_NODES = {
     'earthquake': 5,
     'survey': 6,
 }
-SEED = 2024
 
 
 def parse_args():

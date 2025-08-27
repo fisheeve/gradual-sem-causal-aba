@@ -31,19 +31,16 @@ from src.utils.bn_utils import get_dataset
 from src.utils.metrics import get_metrics
 from src.utils.resource_utils import MemoryUsageExceededException
 from src.utils.utils import check_arrows_dag, get_matrix_from_arrow_set, parse_arrow
-from src.constants import DAG_NODES_MAP, DAG_EDGES_MAP
+from src.constants import DAG_NODES_MAP, DAG_EDGES_MAP, ALPHA, INDEP_TEST, SAMPLE_SIZE, SEED
+
 
 
 configure_r()
 
-ALPHA = 0.01
-INDEP_TEST = 'fisherz'
 
-SAMPLE_SIZE = 5000
 RESULT_DIR = Path("./results/gradual/v2_bnlearn_graphs_up_to_6_nodes")
 
 DATASETS = ['cancer', 'earthquake', 'survey']
-SEED = 2024
 TIMEOUT = 5 * 60  # 5 minutes
 SEARCH_DEPTH = 10
 

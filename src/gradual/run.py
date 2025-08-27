@@ -8,11 +8,12 @@ from src.causal_aba.core_factory import CoreABASPSolverFactory
 from GradualABA.semantics.modular.SetProductAggregation import SetProductAggregation
 from GradualABA.BSAF import BSAF
 from src.gradual.abaf_opt import ABAFOptimised
+from src.utils.enums import RelationEnum
 from GradualABA.ABAF import ABAF, Assumption
 from typing import Union, Dict
 from GradualABA.constants import DEFAULT_WEIGHT
 import src.causal_aba.assumptions as assums
-from src.gradual.extra.abaf_factory_v1 import FactoryV1
+from src.gradual.extra.abaf_factory_v0 import FactoryV0
 
 from logger import logger
 
@@ -102,6 +103,22 @@ def reset_weights(assum_dict: Dict[str, Assumption], default_weight=DEFAULT_WEIG
         assum.update_weight(default_weight)
 
 
+def get_indep_assum_strength(fact: Fact) -> float:
+        """
+        Get the strength of the assumption based on the fact.
+         Strengths of independence assumptions are assigned as follows:
+         0.5 if nothing is known about the independence assumption
+         0.5 + 0.5 * fact_score if we have an independence fact
+         1 - (0.5 + 0.5 * fact_score) if we have a dependency fact
+        """
+        if fact.relation == RelationEnum.indep:
+            return 0.5 + 0.5 * fact.score
+        elif fact.relation == RelationEnum.dep:
+            return 1 - (0.5 + 0.5 * fact.score)
+        else:
+            raise ValueError(f"Unknown relation type: {fact.relation}")
+
+
 def set_weights_according_to_facts(assum_dict: Dict[str, Assumption], facts: List[Fact]):
     """
     Set the weights of the assumptions in BSAF according to the provided facts.
@@ -112,14 +129,14 @@ def set_weights_according_to_facts(assum_dict: Dict[str, Assumption], facts: Lis
     """
     for fact in facts:
         assumption_name = assums.indep(fact.node1, fact.node2, fact.node_set)
-        new_weight = FactoryV1._get_indep_assum_strength(fact)
+        new_weight = get_indep_assum_strength(fact)
         if assumption_name in assum_dict:
             assum_dict[assumption_name].update_weight(new_weight)
 
 
 if __name__ == "__main__":
     # Example usage
-    factory = FactoryV1(n_nodes=5)
+    factory = FactoryV0(n_nodes=5)
     facts = [Fact(node1=1,
                   node2=2,
                   relation=Fact.RelationEnum.dep,

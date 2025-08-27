@@ -14,16 +14,14 @@ from pathlib import Path
 import time
 import pickle
 from GradualABA.ABAF import ABAF
+from src.constants import ALPHA, INDEP_TEST, SAMPLE_SIZE
 
 
-ALPHA = 0.01
-INDEP_TEST = 'fisherz'
-SAMPLE_SIZE = 5000
+SEED = 2025
 RESULT_DIR = Path("./results/")
 RESULT_DIR.mkdir(parents=True, exist_ok=True)
 
 DATASET_NAME = 'cancer'
-SEED = 2025
 APPENDIX = f"{DATASET_NAME}_with_strengths"
 
 
