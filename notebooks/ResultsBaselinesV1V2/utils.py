@@ -305,3 +305,4 @@ def double_bar_chart_plotly(all_sum, names_dict, colors_dict,
         fig.write_image(output_name.replace('.html','.jpeg'))
 
     fig.show()
+    return fig
