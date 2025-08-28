@@ -12,6 +12,7 @@ from ArgCausalDisco.abapc import ABAPC
 
 from src.abapc import get_arrow_sets
 from src.utils.bn_utils import get_dataset
+from src.constants import ALPHA, INDEP_TEST
 
 
 @pytest.mark.parametrize("seed", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
@@ -20,8 +21,8 @@ def test_causalaba_equal_to_ABASP(seed):
 
     random_stability(seed)
     models, _ = ABAPC(data=data,
-                    alpha=0.01,
-                    indep_test='fisherz',
+                    alpha=ALPHA,
+                    indep_test=INDEP_TEST,
                     scenario='test_cancer_5_nodes',
                     out_mode="optN")
     
@@ -36,7 +37,7 @@ def test_causalaba_equal_to_ABASP(seed):
 
     # clean up
     if Path('results/test_cancer_5_nodes').exists():
-        shutil.rmtree(Path('results/test_cancer_5_nodes'))
+        shutil.rmtree(Path('results/test_cancer_5_nodes'), ignore_errors=True)
 
 
 if __name__ == "__main__":

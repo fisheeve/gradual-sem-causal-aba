@@ -2,7 +2,6 @@ import sys
 sys.path.insert(0, 'ArgCausalDisco/')
 sys.path.insert(0, 'notears/')
 
-import os
 from pathlib import Path
 import shutil
 import pytest
@@ -12,45 +11,18 @@ from src.utils.gen_random_nx import generate_random_bn_data
 from src.abapc import get_cg_and_facts, get_best_model
 from src.abapc import get_models_from_facts
 from src.abapc import get_best_model
+from src.constants import ALPHA, INDEP_TEST
 from logger import logger
 import logging
 
 
-ALPHA = 0.01
-INDEP_TEST = 'fisherz'
-RESULTS_DIR = Path(__file__).resolve().parent
-LOAD_SAVED = False
-EXPERIMENT_RESULT_PATH = RESULTS_DIR / 'experiment_results.csv'
 N_NODES = 5
-
 TOL = 1e-6
 
 logger.setLevel(logging.ERROR)
 
-
-def apply_diff():
-    """
-    apply this custom diff so that old CausalABA interface returns all solutions, not just best one
-    """
-    os.system(f'cd {Path(__file__).resolve().parents[2] / 'ArgCausalDisco'} && git apply ../tests/data/arg_cd.diff')
-    import importlib
-    import ArgCausalDisco.abapc
-    importlib.reload(ArgCausalDisco.abapc)
-    from ArgCausalDisco.abapc import ABAPC
-
-
-def revert_diff():
-    """
-    revert the custom diff so that old CausalABA interface works as before.
-    """
-    os.system(f'cd {Path(__file__).resolve().parents[2] / 'ArgCausalDisco'} && git checkout .')
-
-
-@pytest.mark.skip(reason="Skipping test - please it run with python tests/end_to_end/test_our_wrappers_for_old_abapc.py instead")
 @pytest.mark.parametrize("seed", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 def test_our_wrappers_yield_same_model_and_ranking_as_old_causalaba_interface(seed):
-    apply_diff()
-
     n_runs = 5
     sample_size = 5000
     version = f'random_{n_runs}rep'
@@ -76,11 +48,12 @@ def test_our_wrappers_yield_same_model_and_ranking_as_old_causalaba_interface(se
     _, _, best_I_new = get_best_model(new_model_sets, N_NODES, cg, alpha=ALPHA)
 
     # Now run with old CausalABA interface
-    _, best_I_old, all_models = ABAPC(data=X_s,
-                                        alpha=ALPHA,
-                                        indep_test=INDEP_TEST,
-                                        scenario=f"abapc_{version}_{N_NODES}",
-                                        out_mode="opt")
+    all_models, best_ranking = ABAPC(data=X_s,
+                                     alpha=ALPHA,
+                                     indep_test=INDEP_TEST,
+                                     scenario=f"abapc_{version}_{N_NODES}",
+                                     out_mode="optN")
+    _, best_I_old = best_ranking[0]
 
     all_models = set(all_models)
     new_model_sets = set(new_model_sets)
@@ -91,11 +64,10 @@ def test_our_wrappers_yield_same_model_and_ranking_as_old_causalaba_interface(se
     assert abs(best_I_old - best_I_new) < TOL, "Best model scores do not match between old and new implementations. There is something wrong with ranking of solutions"
 
     # clean up, revert diff, remove test results directory
-    revert_diff()
     if Path('test_results').exists():
-        shutil.rmtree(Path('test_results'))
+        shutil.rmtree(Path('test_results'), ignore_errors=True)
     if Path(f"results/abapc_{version}_{N_NODES}").exists():
-        shutil.rmtree(Path(f"results/abapc_{version}_{N_NODES}"))
+        shutil.rmtree(Path(f"results/abapc_{version}_{N_NODES}"), ignore_errors=True)
 
 
 if __name__ == "__main__":

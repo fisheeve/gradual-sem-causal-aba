@@ -73,4 +73,4 @@ def test_causalaba_equal_to_ABASP(mocker):
 
     # clean up
     if Path('results/test_cancer_5_nodes').exists():
-        shutil.rmtree(Path('results/test_cancer_5_nodes'))
+        shutil.rmtree(Path('results/test_cancer_5_nodes'), ignore_errors=True)

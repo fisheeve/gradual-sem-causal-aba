@@ -29,13 +29,13 @@ install: clean
 	@echo "Cloning required repositories..."
 	git clone https://bitbucket.org/coreo-group/aspforaba.git
 	git clone https://github.com/briziorusso/ArgCausalDisco.git
-	git clone https://github.com/xunzheng/notears.
+	git clone https://github.com/xunzheng/notears.git
 	git clone https://github.com/briziorusso/GradualABA.git
 	git clone https://github.com/bd2kccd/py-causal.git
 
 	cd py-causal && python setup.py install;
 
-	@echo "[TODO: fix this somehow] Applying custom changes to aspforaba sub-repo..."
+	@echo "Applying custom changes to aspforaba sub-repo..."
 	cd aspforaba && git apply ../aspforaba.patch
 
 	cd ArgCausalDisco && git reset --hard 579a1c95f576ecb53d97b0c62d4ceebb90368189
