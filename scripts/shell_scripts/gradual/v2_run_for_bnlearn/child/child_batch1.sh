@@ -15,8 +15,8 @@ python scripts/python_scripts/gradual/v2_run_for_bnlearn.py \
     --path "./results/gradual/v2_run_for_bnlearn/child/batch1" \
     --search-depth 12 \
     --name "child" \
-    --neighbourhood-n-nodes 5 \
-    --c-set-size 0 \
+    --neighbourhood-n-nodes 3 \
+    --c-set-size 3 \
     --n-runs 50 \
     --batch-number 1 \
     --total-batches 10

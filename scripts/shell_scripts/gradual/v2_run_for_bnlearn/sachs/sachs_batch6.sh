@@ -15,8 +15,8 @@ python scripts/python_scripts/gradual/v2_run_for_bnlearn.py \
     --path "./results/gradual/v2_run_for_bnlearn/sachs/batch6" \
     --search-depth 12 \
     --name "sachs" \
-    --neighbourhood-n-nodes 7 \
-    --c-set-size 0 \
+    --neighbourhood-n-nodes 4 \
+    --c-set-size 9 \
     --n-runs 50 \
     --batch-number 6 \
     --total-batches 10
