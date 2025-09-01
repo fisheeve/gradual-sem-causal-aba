@@ -38,7 +38,11 @@ install: clean
 	@echo "Applying custom changes to aspforaba sub-repo..."
 	cd aspforaba && git apply ../aspforaba.patch
 
+	@echo "Checking out specific commit of ArgCausalDisco..."
 	cd ArgCausalDisco && git reset --hard 579a1c95f576ecb53d97b0c62d4ceebb90368189
+
+	@echo "Checking out specific commit of GradualABA..."
+	cd GradualABA && git reset --hard 592d45db65aab28b634c1f7e73944dc4482a32b7
 
 	@echo "Installing additional dependencies..."
 	R_INTERACTIVE=FALSE R_PAPERSIZE=letter PAGER=cat R_OPTS="--no-save --no-restore --quiet" \
