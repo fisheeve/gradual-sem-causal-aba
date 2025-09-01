@@ -140,13 +140,14 @@ def plot_runtime(df,
         fig.write_image(output_name.replace('.html', '.jpeg'), scale=2)
 
     fig.show()
+    return fig
 
 
 
 def double_bar_chart_plotly(all_sum, names_dict, colors_dict, 
                             vars_to_plot=['n_sid_low', 'n_sid_high'],
                             names=['Best', 'Worst'],
-                            labels=['Normalised SID = SID / Number of Edges in DAG', ''],
+                            labels=['Normalised SID', ''],
                             methods=['Random', 'FGS', 'NOTEARS-MLP', 'ABAPC (Existing)', 'ABAPC (ASPforABA)'],
                             range_y1=[0, 1], range_y2=[0, 1], font_size=20,
                             save_figs=False, output_name="bar_chart.html", debug=False,
@@ -157,7 +158,8 @@ def double_bar_chart_plotly(all_sum, names_dict, colors_dict,
                             nl_space=9,
                             start_pos = 0.039,
                             width=1600,
-                            height=700):
+                            height=700,
+                            annot_y=1.015):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     for n, var_to_plot in enumerate(vars_to_plot):
@@ -207,21 +209,6 @@ def double_bar_chart_plotly(all_sum, names_dict, colors_dict,
             yaxis2=dict(scaleanchor=0, showline=False, showgrid=False, showticklabels=second_ticks, zeroline=True),
             )
 
-    fig.add_annotation(
-        xref="paper",
-        yref="paper",
-        xanchor="center",
-        x=0,
-        yanchor="bottom",
-        y=-0.08,
-        text=f"Dataset:",
-        showarrow=False,    
-        font=dict(
-                    family="Serif",
-                    size=font_size,
-                    color="Black"
-                    )
-        )
     
     for n, (var_to_plot, label, y_range) in enumerate(zip(vars_to_plot, labels, [range_y1, range_y2])):
         fig.update_yaxes(title={'text':f'{label}','font':{'size':font_size}}, secondary_y=n==1, range=y_range)
@@ -246,7 +233,7 @@ def double_bar_chart_plotly(all_sum, names_dict, colors_dict,
             yref="y domain",
             xanchor="left",
             x=s1,
-            y=1.015,
+            y=annot_y,
                     text=f"{' '*lin_space}{name1}{' '*(lin_space)}",
             showarrow=False,    
             font=dict(
@@ -264,7 +251,7 @@ def double_bar_chart_plotly(all_sum, names_dict, colors_dict,
             yref="y domain",
             xanchor="left",
             x=s2,
-            y=1.015,
+            y=annot_y,
                     text=f"{' '*(nl_space)}{name2}{' '*nl_space}",
             showarrow=False,    
             font=dict(
