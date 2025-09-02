@@ -15,6 +15,7 @@ from src.utils.configure_r import configure_r
 from src.constants import DAG_NODES_MAP, DAG_EDGES_MAP
 from src.gradual.semantic_modules.TopDiffAggregation import TopDiffAggregation
 from src.gradual.search_best_model import limited_depth_search_best_model
+from src.gradual.search_best_model_every_step import search_best_model_every_step
 from src.gradual.scalable.bsaf_builder_v2 import BSAFBuilderV2
 from src.gradual.run import reset_weights, run_model, set_weights_according_to_facts
 from src.abapc import get_cg_and_facts, score_model_original
@@ -51,6 +52,8 @@ def parse_args():
                         help='Batch number for parallel runs.')
     parser.add_argument('-t', '--total-batches', type=int, default=1,
                         help='Total number of batches for parallel runs.')
+    parser.add_argument('--use-every-step-search', type=str, choices=['true', 'false'], default='false',
+                        help='Whether to use every-step search or single search at the top arrow.')
     return parser.parse_args()
 
 
@@ -207,7 +210,8 @@ def main(path,
          c_set_size,
          n_runs,
          batch_number,
-         total_batches):
+         total_batches,
+         use_every_step_search):
     n_nodes = DAG_NODES_MAP[name]
 
     random_stability(SEED)
@@ -253,12 +257,18 @@ def main(path,
         )
 
         start_orig_ranking = time.time()
-        original_ranking_I, best_model_original_ranking = limited_depth_search_best_model(
+        if use_every_step_search:
+            searcher = search_best_model_every_step
+        else:
+            searcher = limited_depth_search_best_model
+
+        original_ranking_I, best_model_original_ranking = searcher(
             steps_ahead=search_depth,
             sorted_arrows=sorted_arrows,
             is_dag=check_arrows_dag,
             get_score=score_original_prefilled
         )
+
         elapsed_orig_ranking = time.time() - start_orig_ranking
         record_results(
             result_dir=path,
@@ -291,7 +301,8 @@ if __name__ == "__main__":
         c_set_size=args.c_set_size,
         n_runs=args.n_runs,
         batch_number=args.batch_number,
-        total_batches=args.total_batches
+        total_batches=args.total_batches,
+        use_every_step_search=(args.use_every_step_search.lower() == 'true'),
     )
 
     logger.info("All runs completed successfully.")
