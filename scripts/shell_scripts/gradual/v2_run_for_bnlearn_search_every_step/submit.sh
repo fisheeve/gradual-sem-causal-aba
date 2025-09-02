@@ -1,3 +1,3 @@
-sh scripts/shell_scripts/gradual/v2_run_for_bnlearn/asia/submit_asia.sh
-sh scripts/shell_scripts/gradual/v2_run_for_bnlearn/sachs/submit_sachs.sh
-sh scripts/shell_scripts/gradual/v2_run_for_bnlearn/child/submit_child.sh
+sh scripts/shell_scripts/gradual/v2_run_for_bnlearn_search_every_step/asia/submit_asia.sh
+sh scripts/shell_scripts/gradual/v2_run_for_bnlearn_search_every_step/sachs/submit_sachs.sh
+sh scripts/shell_scripts/gradual/v2_run_for_bnlearn_search_every_step/child/submit_child.sh
