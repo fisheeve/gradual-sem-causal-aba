@@ -11,7 +11,9 @@ module load R
 export CUDA_VISIBLE_DEVICES="[]"
 
 python scripts/python_scripts/gradual/v2_ablation_random_graphs_7nodes.py \
-    --n-runs 50
+    --n-runs 50 \
+    --search-depth 10 \
+    --use-every-step-search "false"
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to run the bnlearn experiment script."

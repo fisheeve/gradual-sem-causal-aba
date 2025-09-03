@@ -25,6 +25,7 @@ from src.abapc import get_cg_and_facts, score_model_original
 from src.gradual.run import reset_weights, run_model, set_weights_according_to_facts
 from src.gradual.scalable.bsaf_builder_v2 import BSAFBuilderV2
 from src.gradual.search_best_model import limited_depth_search_best_model
+from src.gradual.search_best_model_every_step import search_best_model_every_step
 from src.gradual.semantic_modules.TopDiffAggregation import TopDiffAggregation
 from src.utils.configure_r import configure_r
 from src.utils.gen_random_nx import generate_random_bn_data
@@ -41,18 +42,27 @@ RESULT_DIR = Path("./results/gradual/v2_random_graphs_3_to_6_nodes")
 
 N_NODES = [3, 4, 5, 6, 7]
 TIMEOUT = 30 * 60  # 5 minutes
-SEARCH_DEPTH = 10
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run gradual ABA experiment v2 on random graphs")
     parser.add_argument('--n-runs', type=int, default=50, help='Number of runs for each dataset')
+    parser.add_argument('--search-depth', type=int, default=10, help='Search depth for limited depth search')
+    parser.add_argument('--use-every-step-search', type=str, choices=['true', 'false'], default='false',
+                        help='Whether to use every-step search or single search at the top arrow.')
     return parser.parse_args()
 
 
-def main(n_runs):
+def main(n_runs,
+         search_depth,
+         use_every_step_search=False):
     cpdag_metrics_df = pd.DataFrame()
     dag_metrics_df = pd.DataFrame()
+
+    if use_every_step_search:
+        search_algo = search_best_model_every_step
+    else:
+        search_algo = limited_depth_search_best_model
 
     for n_nodes in N_NODES:
         n_edges = n_nodes  # for now, only one edge per node
@@ -122,8 +132,8 @@ def main(n_runs):
             sorted_arrows = [parse_arrow(arrow) for _, arrow in sorted_arrows]
 
             start_orig_ranking = time.time()
-            original_ranking_I, best_model_original_ranking = limited_depth_search_best_model(
-                steps_ahead=SEARCH_DEPTH,
+            original_ranking_I, best_model_original_ranking = search_algo(
+                steps_ahead=search_depth,
                 sorted_arrows=sorted_arrows,
                 is_dag=check_arrows_dag,
                 get_score=score_original_prefilled
@@ -140,7 +150,7 @@ def main(n_runs):
                 'max_ct_depth': bsaf_builder.max_collider_tree_depth if bsaf_builder.include_collider_tree_arguments else -1,
                 'max_path_length': bsaf_builder.max_path_length,
                 'max_c_set_size': bsaf_builder.max_conditioning_set_size,
-                'search_depth': SEARCH_DEPTH,
+                'search_depth': search_depth,
                 'elapsed_bsaf_creation': elapsed_bsaf_creation,
                 'elapsed_model_solution': elapsed_model_solution,
                 'is_converged': is_converged,
@@ -185,6 +195,8 @@ if __name__ == "__main__":
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
 
     # run the experiment
-    main(n_runs=args.n_runs)
+    main(n_runs=args.n_runs,
+         search_depth=args.search_depth,
+         use_every_step_search=(args.use_every_step_search.lower() == 'true'))
 
     logger.info("Experiment completed successfully.")

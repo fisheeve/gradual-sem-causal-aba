@@ -30,6 +30,7 @@ from src.abapc import get_cg_and_facts, score_model_original
 from src.gradual.run import reset_weights, run_model, set_weights_according_to_facts
 from src.gradual.scalable.bsaf_builder_v2 import BSAFBuilderV2
 from src.gradual.search_best_model import limited_depth_search_best_model
+from src.gradual.search_best_model_every_step import search_best_model_every_step
 from src.gradual.semantic_modules.TopDiffAggregation import TopDiffAggregation
 from src.utils.configure_r import configure_r
 from src.utils.gen_random_nx import generate_random_bn_data
@@ -215,7 +216,8 @@ def run_and_record_custom_neighbouthood_c_set_coll_arg(
     neighbourhood_n_nodes,
     c_set_size,
     use_collider_arguments,
-    seeds_list
+    seeds_list,
+    search_algo,
 ):
     """Run the model with custom neighbourhood_n_nodes, c_set_size, and use_collider_arguments.
         the search depth is fixed to the default value.
@@ -265,7 +267,7 @@ def run_and_record_custom_neighbouthood_c_set_coll_arg(
             logger.error(f"Model run for seed {seed} timed out. Skipping this seed.")
             continue
         start_orig_ranking = time.time()
-        original_ranking_I, best_model_original_ranking = limited_depth_search_best_model(
+        original_ranking_I, best_model_original_ranking = search_algo(
             steps_ahead=DEFAULTS['search_depth'],
             sorted_arrows=sorted_arrows,
             is_dag=check_arrows_dag,
@@ -291,14 +293,23 @@ def run_and_record_custom_neighbouthood_c_set_coll_arg(
 def parse_args():
     parser = argparse.ArgumentParser(description="Run gradual ABA experiment v2 on random graphs")
     parser.add_argument('--n-runs', type=int, default=50, help='Number of runs for each dataset')
+    parser.add_argument('--use-every-step-search', type=str, choices=['true', 'false'], default='false',
+                        help='Whether to use every-step search or single search at the top arrow.')
     return parser.parse_args()
 
 
-def main(n_runs):
+def main(n_runs, use_every_step_search=False):
     logger.info("Starting new experiment, metrics will be saved to file.")
     # Delete existing results files if they exist
     (RESULT_DIR / 'cpdag_metrics.csv').unlink(missing_ok=True)
     (RESULT_DIR / 'dag_metrics.csv').unlink(missing_ok=True)
+
+    if use_every_step_search:
+        search_algo = search_best_model_every_step
+        logger.info("Using every-step search algorithm.")
+    else:
+        search_algo = limited_depth_search_best_model
+        logger.info("Using single search at the top arrow algorithm.")
 
     random_stability(SEED)
     seeds_list = np.random.randint(0, 10000, (n_runs,)).tolist()
@@ -339,7 +350,7 @@ def main(n_runs):
 
         for search_depth in SEARCH_DEPTH:
             start_orig_ranking = time.time()
-            original_ranking_I, best_model_original_ranking = limited_depth_search_best_model(
+            original_ranking_I, best_model_original_ranking = search_algo(
                 steps_ahead=search_depth,
                 sorted_arrows=sorted_arrows,
                 is_dag=check_arrows_dag,
@@ -370,6 +381,7 @@ def main(n_runs):
                 c_set_size=DEFAULTS['c_set_size'],
                 use_collider_arguments=DEFAULTS['use_collider_arguments'],
                 seeds_list=seeds_list,
+                search_algo=search_algo,
             )
     
     # Iterate through c_set_size
@@ -381,6 +393,7 @@ def main(n_runs):
                 c_set_size=c_set_size,
                 use_collider_arguments=DEFAULTS['use_collider_arguments'],
                 seeds_list=seeds_list,
+                search_algo=search_algo,
             )
 
     # Iterate through use_collider_arguments
@@ -390,6 +403,7 @@ def main(n_runs):
         c_set_size=DEFAULTS['c_set_size'],
         use_collider_arguments=False,  # Opposite of default
         seeds_list=seeds_list,
+        search_algo=search_algo
     )
 
 
@@ -400,6 +414,7 @@ if __name__ == "__main__":
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
 
     # run the experiment
-    main(n_runs=args.n_runs)
+    main(n_runs=args.n_runs,
+         use_every_step_search=(args.use_every_step_search.lower() == 'true'))
 
     logger.info("Experiment completed successfully.")

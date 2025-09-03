@@ -12,8 +12,8 @@ export CUDA_VISIBLE_DEVICES="[]"
 
 python scripts/python_scripts/gradual/v2_random_graphs_3_to_6_nodes.py \
     --n-runs 50 \
-    --search-depth 10 \
-    --use-every-step-search "false"
+    --search-depth 5 \
+    --use-every-step-search "true"
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to run the bnlearn experiment script."
