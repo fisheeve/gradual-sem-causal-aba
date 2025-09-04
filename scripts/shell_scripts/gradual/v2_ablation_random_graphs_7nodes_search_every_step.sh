@@ -12,7 +12,6 @@ export CUDA_VISIBLE_DEVICES="[]"
 
 python scripts/python_scripts/gradual/v2_ablation_random_graphs_7nodes.py \
     --n-runs 50 \
-    --search-depth 5 \
     --use-every-step-search "true"
 
 if [ $? -ne 0 ]; then
