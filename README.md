@@ -81,7 +81,7 @@ The `scripts/` contains python scripts to run experiments. It also contains shel
 
 ## Declarations
 ### Use of Generative AI
-I acknowledge the use of \href{https://github.com/features/copilot}{GitHub Copilot} powered by \href{https://openai.com/index/gpt-4-1/}{GPT-4.1} for code completion and data visualisation script generation.
+I acknowledge the use of [GitHub Copilot](https://github.com/features/copilot) powered by [GPT-4.1](https://openai.com/index/gpt-4-1/) for code completion and data visualisation script generation.
 
 ## Acknowledgements
 I would like to thank the authors and contributors of the following projects, whose source code was used in this research:
